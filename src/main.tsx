@@ -8,6 +8,15 @@ import News from '@/pages/News';
 import NewsArticle from '@/pages/NewsArticle';
 import About from '@/pages/About';
 import Help from '@/pages/Help';
+
+// Local font imports (replaces Google Fonts CDN)
+import '@fontsource/material-icons/index.css';
+import '@fontsource/source-sans-3/400.css';
+import '@fontsource/source-sans-3/700.css';
+import '@fontsource/source-sans-3/400-italic.css';
+import '@fontsource/source-code-pro/400.css';
+import '@fontsource/source-code-pro/700.css';
+
 import '@/styles/index.scss';
 
 createRoot(document.getElementById('root')!).render(

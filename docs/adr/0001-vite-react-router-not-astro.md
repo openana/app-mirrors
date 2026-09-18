@@ -1,0 +1,3 @@
+# Use Vite + React Router, not Astro
+
+We initially chose Astro for SSG/SEO, but the core data (mirror status, download list) is fetched client-side from a backend API — which negates Astro's SSG advantage for those pages. The only SEO-sensitive content is help docs (~200 pages), which can be pre-rendered at build time with a simple script. Vite + React Router gives us a simpler architecture (single rendering mode, no dual Astro/React paradigm), direct alignment with mirrorz's SPA patterns, and client-side data fetching as a native feature rather than something we fight the framework to do.

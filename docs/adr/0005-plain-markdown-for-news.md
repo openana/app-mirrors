@@ -1,0 +1,3 @@
+# Use plain Markdown for news, not MDX
+
+The old app-mirrors used MDX for news posts, which required contentlayer2 and the MDX compilation pipeline. Since news posts don't need JSX components (they're announcements with text, links, and images), plain Markdown is sufficient. This removes the contentlayer2 dependency and simplifies the content pipeline. Astro's built-in Markdown processing handles frontmatter and rendering natively.

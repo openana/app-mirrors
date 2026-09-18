@@ -1,0 +1,3 @@
+# Full port of mirrorz-help's docs rendering pipeline
+
+We chose to port the complete `parse-markdown.ts` logic from mirrorz-help as an Astro content loader: YAML config parsing, MDX compilation, Hogan template rendering for interactive code blocks, and site-specific content overrides. A simpler approach (static MDX without templates) was rejected because the interactive code blocks — where users pick options like distro version and see updated commands — are a core part of the help experience. The Hogan template system and site overrides (~200 lines of logic) are the price of that interactivity.

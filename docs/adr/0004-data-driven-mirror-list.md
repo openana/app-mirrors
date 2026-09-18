@@ -1,0 +1,3 @@
+# Data-driven mirror list, no static config
+
+The old app-mirrors had a hardcoded `mirrorConfigs` array that defined which mirrors to show, with display names, descriptions, and aliases. The new approach removes this entirely: the mirror list is driven solely by what the backend provides in `mirrors.json`. If a mirror isn't in the feed, it doesn't appear. This eliminates the maintenance burden of keeping a static config in sync with the backend and ensures the UI always reflects the actual state of the mirror infrastructure. Display metadata (titles, descriptions, help links) can be enriched from `mirrorz-docs` YAML configs where available, falling back to the raw `name` from the backend.

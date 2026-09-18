@@ -1,4 +1,6 @@
+import { useState, useRef, useEffect } from 'react';
 import { NavLink } from 'react-router';
+import { useTheme, type ThemePreference } from '@/contexts/ThemeContext';
 
 interface NavItem {
   label: string;
@@ -16,6 +18,43 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export default function Sidebar() {
+  const { preference, setPreference } = useTheme();
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const settingsButton = useRef<HTMLButtonElement>(null);
+  const settingsPanel = useRef<HTMLDivElement>(null);
+
+  // Close settings on outside click
+  useEffect(() => {
+    if (!settingsOpen) return;
+    const onClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      if (
+        !settingsButton.current?.contains(target) &&
+        !settingsPanel.current?.contains(target)
+      ) {
+        setSettingsOpen(false);
+      }
+    };
+    const onEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setSettingsOpen(false);
+        settingsButton.current?.focus();
+      }
+    };
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onEscape);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onEscape);
+    };
+  }, [settingsOpen]);
+
+  const themeOptions: [ThemePreference, string, string][] = [
+    ['system', 'computer', 'System'],
+    ['light', 'light_mode', 'Light'],
+    ['dark', 'dark_mode', 'Dark'],
+  ];
+
   return (
     <nav className="sidebar">
       <NavLink to="/" className="sidebar-brand">
@@ -53,10 +92,49 @@ export default function Sidebar() {
           </NavLink>
         ),
       )}
-      <button type="button" className="settings-toggle">
+      <button
+        type="button"
+        className="settings-toggle"
+        onClick={() => setSettingsOpen((o) => !o)}
+        aria-expanded={settingsOpen}
+        aria-controls="settings-panel"
+        ref={settingsButton}
+      >
         <span className="material-icons" aria-hidden="true">settings</span>
         <span className="nav-label">Settings</span>
       </button>
+      {settingsOpen && (
+        <div
+          className="settings-panel"
+          id="settings-panel"
+          role="dialog"
+          aria-label="Settings"
+          ref={settingsPanel}
+        >
+          <div className="settings-panel-title">Settings</div>
+          <div className="settings-section">
+            <div className="settings-section-label">
+              <span className="material-icons" aria-hidden="true" style={{ fontSize: 18 }}>contrast</span>
+              <strong>Theme</strong>
+            </div>
+            <div className="settings-options" role="radiogroup" aria-label="Theme">
+              {themeOptions.map(([value, icon, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`settings-choice${preference === value ? ' active' : ''}`}
+                  role="radio"
+                  aria-checked={preference === value}
+                  onClick={() => setPreference(value)}
+                >
+                  <span className="material-icons" style={{ fontSize: 18 }}>{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }

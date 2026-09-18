@@ -26,14 +26,15 @@ createRoot(document.getElementById('root')!).render(
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
-          <Route index element={<Home />} />
+          <Route index element={<About />} />
+          <Route path="mirrors" element={<Home />} />
           <Route path="download" element={<Download />} />
           <Route path="download/:category" element={<Download />} />
           <Route path="download/:category/:distro" element={<Download />} />
           <Route path="news" element={<News />} />
           <Route path="news/:slug" element={<NewsArticle />} />
           <Route path="help/*" element={<Help />} />
-          <Route path="about" element={<About />} />
+
           <Route path="*" element={<div>404</div>} />
         </Route>
       </Routes>

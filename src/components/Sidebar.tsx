@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { Link, NavLink } from 'react-router';
+import { NavLink } from 'react-router';
 import { useTheme, type ThemePreference } from '@/contexts/ThemeContext';
 import { useTranslation, useLocale, type Locale } from '@/i18n';
 
@@ -11,11 +11,10 @@ interface NavItem {
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { labelKey: 'nav.mirrors', href: '/', icon: 'list_alt' },
+  { labelKey: 'nav.mirrors', href: '/mirrors/', icon: 'list_alt' },
   { labelKey: 'nav.downloads', href: '/download/', icon: 'get_app' },
   { labelKey: 'nav.news', href: '/news/', icon: 'newspaper' },
   { labelKey: 'nav.help', href: '/help/', icon: 'help_outline' },
-  { labelKey: 'nav.about', href: '/about/', icon: 'info_outline' },
 ];
 
 export default function Sidebar() {
@@ -60,9 +59,9 @@ export default function Sidebar() {
 
   return (
     <nav className="sidebar">
-      <Link to="/" className="sidebar-brand">
+      <NavLink to="/" end className={({ isActive }) => `sidebar-brand${isActive ? ' active' : ''}`}>
         <img src={theme === 'dark' ? '/favicon-dark.svg' : '/favicon-light.svg'} className="sidebar-logo" alt="Mirror" />
-      </Link>
+      </NavLink>
       {NAV_ITEMS.map((item) =>
         item.external ? (
           <a

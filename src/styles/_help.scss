@@ -11,6 +11,7 @@
 }
 
 .help-index {
+  width: 100%;
   max-width: 760px;
   margin: 0 auto;
   padding: 30px 28px 60px;
@@ -165,6 +166,19 @@
     line-height: 1.6;
   }
 
+  blockquote {
+    margin: 12px 0;
+    padding: 8px 16px;
+    border-left: 3px solid var(--accent);
+    background: var(--bg-subtle);
+    color: var(--text-muted);
+    border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+
+    p {
+      margin: 0;
+    }
+  }
+
   a {
     color: var(--link);
   }
@@ -187,6 +201,224 @@
   color: var(--text-muted);
 }
 
+// Help settings bar (site selector, sudo/https toggles)
+.help-settings-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding: 8px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+.help-setting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-setting-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+  font-size: 13px;
+}
+
+.help-site-select {
+  padding: 4px 28px 4px 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  min-width: 140px;
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}
+
+.help-setting-separator {
+  width: 1px;
+  height: 20px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.help-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  user-select: none;
+
+  input[type='checkbox'] {
+    cursor: pointer;
+    accent-color: var(--accent);
+    width: 16px;
+    height: 16px;
+  }
+
+  &:hover {
+    color: var(--text);
+  }
+}
+
+// Codeblock component styles
+.codeblock-container {
+  margin: 20px 0;
+}
+
+.codeblock-menus {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  margin-bottom: 8px;
+}
+
+.codeblock-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.codeblock-menu-label {
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.codeblock-select {
+  padding: 4px 28px 4px 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23666' d='M2 4l4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}
+
+.codeblock-text-input {
+  padding: 4px 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text);
+  min-width: 140px;
+
+  &:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: -1px;
+  }
+}
+
+.codeblock-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: var(--text);
+
+  input[type='checkbox'] {
+    cursor: pointer;
+    accent-color: var(--accent);
+  }
+}
+
+.codeblock-wrapper {
+  position: relative;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.codeblock-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-subtle);
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.codeblock-lang {
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.codeblock-filepath {
+  font-family: 'Source Code Pro', monospace;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.codeblock-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg);
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+
+  &:hover {
+    color: var(--text);
+    border-color: var(--text-muted);
+  }
+}
+
+.codeblock-pre {
+  margin: 0;
+  padding: 14px 18px;
+  background: var(--bg-subtle);
+  border: none;
+  border-radius: 0;
+  overflow-x: auto;
+  font-size: 13.5px;
+  line-height: 1.6;
+
+  code {
+    background: transparent;
+    padding: 0;
+    font-size: inherit;
+  }
+}
+
 @media screen and (max-width: $mobile-breakpoint) {
   .help-page {
     flex-direction: column;
@@ -202,5 +434,10 @@
 
   .help-content {
     padding: 20px 16px 40px;
+  }
+
+  .codeblock-menus {
+    flex-direction: column;
+    gap: 8px;
   }
 }

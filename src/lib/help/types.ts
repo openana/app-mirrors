@@ -6,12 +6,18 @@ export interface ToC {
 
 export interface HelpPageData {
   toc: ToC[];
-  content: string; // Serialized React tree (JSON)
+  content: string;
   meta: {
     title: string;
     cname: string;
   };
   compiledTemplates: Record<string, string>;
+  codeBlocks: Array<{
+    id: string;
+    menus: InputType[];
+    lang?: string;
+    filepath?: string;
+  }>;
 }
 
 export interface ZDocConfigOnDisk {

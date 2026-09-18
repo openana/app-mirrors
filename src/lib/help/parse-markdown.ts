@@ -9,7 +9,6 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { parse as yamlParse } from 'yaml';
-import Hogan from 'hogan.js';
 import type {
   ZDocConfig,
   ZDocConfigOnDisk,
@@ -160,7 +159,11 @@ export function createInitialState(menus: InputType[]): MenuValue {
   }, {});
 }
 
-function parseContentBlocks(content: string): {
+function parseContentBlocks(
+  content: string,
+  inputDefs: Record<string, ZDocInput>,
+  globalBlockCounter: { value: number },
+): {
   html: string;
   codeBlocks: Array<{
     id: string;
@@ -180,32 +183,51 @@ function parseContentBlocks(content: string): {
   }> = [];
   const headings: ToC[] = [];
 
-  // Extract headings
+  // Extract headings, handling {#custom-id} syntax
   const headingRegex = /^(#{1,3})\s+(.+)$/gm;
   let match;
   while ((match = headingRegex.exec(content)) !== null) {
     const level = match[1]?.length || 0;
-    const text = match[2] || '';
-    const id = text
-      .toLowerCase()
-      .replace(/[^\w\s-]/g, '')
-      .replace(/\s+/g, '-');
+    const rawText = match[2] || '';
+    // Strip {#custom-id} from the text
+    const text = rawText.replace(/\s*\{#[^}]+\}\s*$/, '');
+    // Use custom ID if provided, otherwise generate from text
+    const customIdMatch = rawText.match(/\{#([^}]+)\}$/);
+    const id = customIdMatch
+      ? customIdMatch[1]
+      : text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-');
     headings.push({ url: `#${id}`, content: text, depth: level });
   }
 
   // Process ztmpl directives into code blocks
-  let blockCounter = 0;
   const processedContent = content.replace(
     /```{ztmpl([^}]*)}\n([\s\S]*?)```/g,
     (_match, attrs: string, template: string) => {
       const langMatch = attrs.match(/lang="([^"]+)"/);
       const pathMatch = attrs.match(/path="([^"]+)"/);
+      const inputMatch = attrs.match(/input="([^"]+)"/);
 
-      const id = `codeblock-${blockCounter++}`;
+      const id = `codeblock-${globalBlockCounter.value++}`;
+
+      // Build menus from input attribute
+      const menus: InputType[] = [];
+      if (inputMatch?.[1]) {
+        const inputNames = inputMatch[1].split(/\s+/);
+        for (const inputName of inputNames) {
+          const inputDef = inputDefs[inputName];
+          if (inputDef) {
+            menus.push(transpileInput(inputName, inputDef));
+          }
+        }
+      }
+
       codeBlocks.push({
         id,
         template: template.trim(),
-        menus: [], // Will be populated later
+        menus,
         lang: langMatch?.[1],
         filepath: pathMatch?.[1],
       });
@@ -215,18 +237,44 @@ function parseContentBlocks(content: string): {
   );
 
   // Simple markdown to HTML conversion
-  const html = processedContent
-    .replace(/^### (.+)$/gm, '<h3 id="$1">$1</h3>')
-    .replace(/^## (.+)$/gm, '<h2 id="$1">$1</h2>')
-    .replace(/^# (.+)$/gm, '<h1 id="$1">$1</h1>')
+  // Process blockquotes first, then protect them from further processing
+  let html = processedContent
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/(<blockquote>.*<\/blockquote>\n?)+/g, (match) => {
+      // Merge consecutive blockquotes into one
+      const content = match.replace(/<\/blockquote>\n?<blockquote>/g, '<br>');
+      return content;
+    });
+
+  // Replace double newlines with paragraph breaks, but not before/after block elements
+  html = html.replace(/\n\n/g, '\n<p-break>\n');
+
+  // Convert headings, handling {#custom-id} syntax
+  const replaceHeading = (_match: string, tag: string, rawText: string) => {
+    const text = rawText.replace(/\s*\{#[^}]+\}\s*$/, '');
+    const customIdMatch = rawText.match(/\{#([^}]+)\}$/);
+    const id = customIdMatch
+      ? customIdMatch[1]
+      : text
+          .toLowerCase()
+          .replace(/[^\w\s-]/g, '')
+          .replace(/\s+/g, '-');
+    return `<${tag} id="${id}">${text}</${tag}>`;
+  };
+
+  html = html
+    .replace(/^### (.+)$/gm, (_, text) => replaceHeading(_, 'h3', text))
+    .replace(/^## (.+)$/gm, (_, text) => replaceHeading(_, 'h2', text))
+    .replace(/^# (.+)$/gm, (_, text) => replaceHeading(_, 'h1', text))
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
     .replace(/`(.+?)`/g, '<code>$1</code>')
     .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
     .replace(/^- (.+)$/gm, '<li>$1</li>')
     .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/\n\n/g, '</p><p>')
-    .replace(/^(?!<[hulo/])(.+)$/gm, '<p>$1</p>')
+    .replace(/^(?!<[hulob/])(.+)$/gm, '<p>$1</p>')
+    .replace(/<p><\/p>/g, '')
+    .replace(/<p-break>/g, '</p><p>')
     .replace(/<p><\/p>/g, '');
 
   return { html, codeBlocks, headings };
@@ -255,33 +303,26 @@ export async function getContentBySegments(
     filepath?: string;
   }> = [];
   const allHeadings: ToC[] = [];
+  const globalBlockCounter = { value: 0 };
 
   for (const blockName of blockNames) {
     const content = await loadBlock(docsDir, id, blockName, language);
     if (!content) continue;
 
-    const { html, codeBlocks, headings } = parseContentBlocks(content);
+    const { html, codeBlocks, headings } = parseContentBlocks(
+      content,
+      conf.input,
+      globalBlockCounter,
+    );
     blocks.push(html);
     allCodeBlocks.push(...codeBlocks);
     allHeadings.push(...headings);
   }
 
-  // Compile Hogan templates
+  // Store raw templates — the client will compile them with Hogan
   const compiledTemplates: Record<string, string> = {};
   for (const block of allCodeBlocks) {
-    try {
-      const compiled = Hogan.compile(block.template, { asString: true }) as unknown as string;
-      compiledTemplates[block.id] = compiled;
-    } catch {
-      // If compilation fails, use the raw template
-      compiledTemplates[block.id] = block.template;
-    }
-  }
-
-  // Build menus from input definitions
-  for (const block of allCodeBlocks) {
-    // For now, use empty menus — the frontend will handle input rendering
-    block.menus = [];
+    compiledTemplates[block.id] = block.template;
   }
 
   const contentHtml = blocks.join('\n\n');
@@ -294,6 +335,12 @@ export async function getContentBySegments(
       cname: id,
     },
     compiledTemplates,
+    codeBlocks: allCodeBlocks.map(({ id, menus, lang, filepath }) => ({
+      id,
+      menus,
+      lang,
+      filepath,
+    })),
   };
 }
 

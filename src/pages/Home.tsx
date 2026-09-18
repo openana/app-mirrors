@@ -20,6 +20,8 @@ function GroupCard({
 }) {
   const statuses = group.entries.map((e) => e.status);
   const lastUpdateTs = Math.max(0, ...group.entries.map((e) => e.last_update_ts));
+  const isGit = group.name.endsWith('.git');
+  const href = isGit ? `/git/${group.name}/` : `/${group.name}/`;
   return (
     <div className={`group${expanded ? ' group-expanded' : ''}`}>
       <div className="group-header" onClick={onToggle}>
@@ -27,7 +29,7 @@ function GroupCard({
           <span className="material-icons">
             {expanded ? 'expand_more' : 'chevron_right'}
           </span>
-          {group.name}
+          <a href={href}>{group.name}</a>
         </h2>
         <Summary statuses={statuses} lastUpdateTs={lastUpdateTs} />
       </div>
@@ -37,11 +39,6 @@ function GroupCard({
             .sort((a, b) => a.name.localeCompare(b.name))
             .map((entry) => (
               <div key={entry.name}>
-                <h3>
-                  <a href={entry.upstream} target="_blank" rel="noopener">
-                    {entry.name}
-                  </a>
-                </h3>
                 {entry.upstream && (
                   <div className="upstream">
                     <span className="material-icons">outbound</span>

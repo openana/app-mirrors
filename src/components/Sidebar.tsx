@@ -18,7 +18,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 export default function Sidebar() {
-  const { preference, setPreference } = useTheme();
+  const { theme, preference, setPreference } = useTheme();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const settingsPanel = useRef<HTMLDivElement>(null);
@@ -58,7 +58,7 @@ export default function Sidebar() {
   return (
     <nav className="sidebar">
       <Link to="/" className="sidebar-brand">
-        <img src="/favicon.svg" className="sidebar-logo" alt="Mirror" />
+        <img src={theme === 'dark' ? '/favicon-dark.svg' : '/favicon-light.svg'} className="sidebar-logo" alt="Mirror" />
       </Link>
       {NAV_ITEMS.map((item) =>
         item.external ? (

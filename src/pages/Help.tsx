@@ -1,6 +1,7 @@
-import { useParams, Link } from 'react-router';
+import { useParams } from 'react-router';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CodeBlock from '@/components/help/CodeBlock';
+import HelpNav from '@/components/help/HelpNav';
 import {
   HelpSettingsProvider,
   useHelpSettings,
@@ -162,12 +163,17 @@ function HelpContent({
 function HelpPage() {
   const { '*': splat } = useParams();
   const [data, setData] = useState<HelpPageData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Normalise to href form: "/help/AOSP/"
+  const activeHref = splat ? `/help/${splat.replace(/\/$/, '')}/` : undefined;
 
   useEffect(() => {
     if (!splat) {
+      setData(null);
       setLoading(false);
+      setError(null);
       return;
     }
 
@@ -189,100 +195,61 @@ function HelpPage() {
       });
   }, [splat]);
 
-  if (!splat) {
-    return <HelpIndex />;
-  }
-
-  if (loading) {
-    return (
-      <div className="help-page">
-        <div className="help-loading">Loading...</div>
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div className="help-page">
+  const content = (() => {
+    if (!splat) {
+      return (
+        <div className="help-placeholder">
+          <span className="material-icons" style={{ fontSize: 40, color: 'var(--text-faint)' }}>menu_book</span>
+          <p>Select a page from the sidebar to get started.</p>
+        </div>
+      );
+    }
+    if (loading) {
+      return <div className="help-loading">Loading...</div>;
+    }
+    if (error || !data) {
+      return (
         <div className="help-error">
           <p>Page not found: {splat}</p>
-          <Link to="/help/">← Back to help index</Link>
         </div>
-      </div>
+      );
+    }
+    return (
+      <HelpSettingsProvider>
+        <h1>{data.meta.title}</h1>
+        <HelpSettingsBar />
+        <HelpContent data={data} />
+      </HelpSettingsProvider>
     );
-  }
+  })();
 
-  return (
-    <HelpSettingsProvider>
-      <div className="help-page">
-        <aside className="help-toc">
-          <div className="help-toc-header">
-            <span className="material-icons" style={{ fontSize: 20 }}>toc</span>
-            <span className="help-toc-title">On this page</span>
-          </div>
-          <nav className="help-toc-list">
-            {data.toc.map((heading, i) => (
-              <a
-                key={`${heading.url}-${i}`}
-                href={heading.url}
-                className={`help-toc-item${heading.depth === 3 ? ' deep' : ''}`}
-              >
-                {heading.content}
-              </a>
-            ))}
-          </nav>
-        </aside>
-        <article className="help-content">
-          <Link to="/help/" className="help-back">← Help index</Link>
-          <h1>{data.meta.title}</h1>
-          <HelpSettingsBar />
-          <HelpContent data={data} />
-        </article>
+  const toc = data ? (
+    <aside className="help-toc">
+      <div className="help-toc-header">
+        <span className="material-icons" style={{ fontSize: 20 }}>toc</span>
+        <span className="help-toc-title">On this page</span>
       </div>
-    </HelpSettingsProvider>
-  );
-}
-
-function HelpIndex() {
-  const [routes, setRoutes] = useState<Record<string, { title: string; cname: string }>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/help/routes.json')
-      .then((res) => (res.ok ? res.json() : {}))
-      .then((r) => {
-        setRoutes(r);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  if (loading) return <div className="help-page"><div className="help-loading">Loading...</div></div>;
-
-  const entries = Object.entries(routes).sort((a, b) => a[1].title.localeCompare(b[1].title));
+      <nav className="help-toc-list">
+        {data.toc.map((heading, i) => (
+          <a
+            key={`${heading.url}-${i}`}
+            href={heading.url}
+            className={`help-toc-item${heading.depth === 3 ? ' deep' : ''}`}
+          >
+            {heading.content}
+          </a>
+        ))}
+      </nav>
+    </aside>
+  ) : null;
 
   return (
     <div className="help-page">
-      <div className="help-index">
-        <h1>Help Documentation</h1>
-        <p style={{ color: 'var(--text-muted)', marginBottom: 24 }}>
-          Configuration guides for each mirror.
-        </p>
-        {entries.length === 0 ? (
-          <p style={{ color: 'var(--text-muted)' }}>
-            No help docs available. Run <code>npm run build:help</code> to generate them.
-          </p>
-        ) : (
-          <ul className="help-index-list">
-            {entries.map(([href, meta]) => (
-              <li key={href}>
-                <Link to={href}>{meta.title}</Link>
-                <span className="help-index-cname">{meta.cname}</span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <HelpNav activeHref={activeHref} />
+      <article className="help-content">
+        {content}
+      </article>
+      {toc}
     </div>
   );
 }

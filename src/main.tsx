@@ -7,6 +7,7 @@ import Download from '@/pages/Download';
 import News from '@/pages/News';
 import NewsArticle from '@/pages/NewsArticle';
 import About from '@/pages/About';
+import Help from '@/pages/Help';
 import '@/styles/index.scss';
 
 createRoot(document.getElementById('root')!).render(
@@ -20,7 +21,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="download/:category/:distro" element={<Download />} />
           <Route path="news" element={<News />} />
           <Route path="news/:slug" element={<NewsArticle />} />
-          <Route path="help/*" element={<div>Help</div>} />
+          <Route path="help/*" element={<Help />} />
           <Route path="about" element={<About />} />
           <Route path="*" element={<div>404</div>} />
         </Route>

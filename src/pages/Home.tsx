@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
-import { useMirrors } from '@/lib/client/mirrors';
+import { useMirrors, useHelpRoutes } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
 import { Summary, StatusList } from '@/components/Status';
 import type { MirrorEntry } from '@/lib/client/types';
@@ -9,19 +9,26 @@ interface MirrorGroup {
   entries: MirrorEntry[];
 }
 
+type HelpRoutes = Record<string, { title: string; cname: string }>;
+
 function GroupCard({
   group,
   expanded,
   onToggle,
+  helpRoutes,
 }: {
   group: MirrorGroup;
   expanded: boolean;
   onToggle: () => void;
+  helpRoutes: HelpRoutes;
 }) {
   const statuses = group.entries.map((e) => e.status);
   const lastUpdateTs = Math.max(0, ...group.entries.map((e) => e.last_update_ts));
   const isGit = group.name.endsWith('.git');
   const href = isGit ? `/git/${group.name}/` : `/${group.name}/`;
+  const helpHref = useMemo(() => {
+    return Object.keys(helpRoutes).find((key) => helpRoutes[key]?.cname === group.name);
+  }, [helpRoutes, group.name]);
   return (
     <div className={`group${expanded ? ' group-expanded' : ''}`}>
       <div className="group-header" onClick={onToggle}>
@@ -30,6 +37,11 @@ function GroupCard({
             {expanded ? 'expand_more' : 'chevron_right'}
           </span>
           <a href={href}>{group.name}</a>
+          {helpHref && (
+            <a href={helpHref} className="help-link" title="Help">
+              <span className="material-icons">help_outline</span>
+            </a>
+          )}
         </h2>
         <Summary statuses={statuses} lastUpdateTs={lastUpdateTs} />
       </div>
@@ -61,6 +73,7 @@ function GroupCard({
 
 export default function Home() {
   const { data: mirrors, error, isLoading } = useMirrors();
+  const { data: helpRoutes } = useHelpRoutes();
   const [filter, setFilter] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [columnCount, setColumnCount] = useState(1);
@@ -140,8 +153,8 @@ export default function Home() {
   const shownCount = filtered.filter((g) => !g.filtered).length;
 
   const visibleGroups = filtered.filter((g) => !g.filtered);
-  const columns = Array.from({ length: columnCount }, () => [] as typeof visibleGroups);
-  visibleGroups.forEach((group, index) => columns[index % columnCount].push(group));
+  const columns: typeof visibleGroups[] = Array.from({ length: columnCount }, () => []);
+  visibleGroups.forEach((group, index) => columns[index % columnCount]?.push(group));
 
   if (error) return <div className="mirrorz"><div className="toolbar">Failed to load mirrors</div></div>;
   if (isLoading) return <div className="mirrorz"><div className="toolbar">Loading...</div></div>;
@@ -182,6 +195,7 @@ export default function Home() {
                 group={group}
                 expanded={expandedGroups.has(group.name)}
                 onToggle={() => toggleGroup(group.name)}
+                helpRoutes={helpRoutes ?? {}}
               />
             ))}
           </div>

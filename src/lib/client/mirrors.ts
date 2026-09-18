@@ -15,3 +15,17 @@ export function useMirrors() {
     revalidateOnFocus: true,
   });
 }
+
+type HelpRoutes = Record<string, { title: string; cname: string }>;
+
+async function fetchHelpRoutes(url: string): Promise<HelpRoutes> {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Failed to fetch help routes: ${res.status}`);
+  return res.json();
+}
+
+export function useHelpRoutes() {
+  return useSWR('/help/routes.json', fetchHelpRoutes, {
+    revalidateOnFocus: false,
+  });
+}

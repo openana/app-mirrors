@@ -1,6 +1,7 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router';
+import { I18nProvider } from '@/i18n';
 import Layout from '@/components/Layout';
 import Home from '@/pages/Home';
 import Download from '@/pages/Download';
@@ -21,6 +22,7 @@ import '@/styles/index.scss';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <I18nProvider>
     <BrowserRouter>
       <Routes>
         <Route element={<Layout />}>
@@ -36,5 +38,6 @@ createRoot(document.getElementById('root')!).render(
         </Route>
       </Routes>
     </BrowserRouter>
+    </I18nProvider>
   </StrictMode>,
 );

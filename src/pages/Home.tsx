@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } fr
 import { useMirrors, useHelpRoutes } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
 import { Summary } from '@/components/Status';
+import { useTranslation } from '@/i18n';
 import type { MirrorEntry } from '@/lib/client/types';
 
 interface MirrorGroup {
@@ -32,6 +33,7 @@ function GroupCard({
   onToggle: () => void;
   helpRoutes: HelpRoutes;
 }) {
+  const { t } = useTranslation();
   const statuses = group.entries.map((e) => e.status);
   const lastUpdateTs = Math.max(0, ...group.entries.map((e) => e.last_update_ts));
   const isGit = group.name.endsWith('.git');
@@ -70,10 +72,10 @@ function GroupCard({
                 <div className="timestamps">
                   <span className="material-icons">schedule</span>
                   <div className="timestamps-list">
-                    <div><span className="ts-label">Last update:</span> {formatRFC3339(entry.last_update_ts)}</div>
-                    <div><span className="ts-label">Last started:</span> {formatRFC3339(entry.last_started_ts)}</div>
-                    <div><span className="ts-label">Last ended:</span> {formatRFC3339(entry.last_ended_ts)}</div>
-                    <div><span className="ts-label">Next schedule:</span> {formatRFC3339(entry.next_schedule_ts)}</div>
+                    <div><span className="ts-label">{t('home.lastUpdate')}</span> {formatRFC3339(entry.last_update_ts)}</div>
+                    <div><span className="ts-label">{t('home.lastStarted')}</span> {formatRFC3339(entry.last_started_ts)}</div>
+                    <div><span className="ts-label">{t('home.lastEnded')}</span> {formatRFC3339(entry.last_ended_ts)}</div>
+                    <div><span className="ts-label">{t('home.nextSchedule')}</span> {formatRFC3339(entry.next_schedule_ts)}</div>
                   </div>
                 </div>
                 {entry.size && (
@@ -92,6 +94,7 @@ function GroupCard({
 export default function Home() {
   const { data: mirrors, error, isLoading } = useMirrors();
   const { data: helpRoutes } = useHelpRoutes();
+  const { t } = useTranslation();
   const [filter, setFilter] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [columnCount, setColumnCount] = useState(1);
@@ -174,8 +177,8 @@ export default function Home() {
   const columns: typeof visibleGroups[] = Array.from({ length: columnCount }, () => []);
   visibleGroups.forEach((group, index) => columns[index % columnCount]?.push(group));
 
-  if (error) return <div className="mirrorz"><div className="toolbar">Failed to load mirrors</div></div>;
-  if (isLoading) return <div className="mirrorz"><div className="toolbar">Loading...</div></div>;
+  if (error) return <div className="mirrorz"><div className="toolbar">{t('home.error')}</div></div>;
+  if (isLoading) return <div className="mirrorz"><div className="toolbar">{t('home.loading')}</div></div>;
 
   return (
     <div className="mirrorz">
@@ -188,20 +191,20 @@ export default function Home() {
             ref={filterInputRef}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Press / to filter (regex supported)"
+            placeholder={t('home.filterPlaceholder')}
           />
           <button
             type="button"
             className="search-clear"
             onClick={() => setFilter('')}
             disabled={!filter}
-            title="Clear filter"
+            title={t('home.clearFilter')}
           >
             <span className="material-icons">close</span>
           </button>
         </div>
         <span className="result-count">
-          {shownCount} / {groups.length} mirrors
+          {t('home.mirrorCount', { shown: shownCount, total: groups.length })}
         </span>
       </div>
       <div className="mirrors" ref={mirrorsRef}>

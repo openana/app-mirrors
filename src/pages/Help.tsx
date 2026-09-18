@@ -7,6 +7,7 @@ import {
   useHelpSettings,
 } from '@/contexts/HelpSettingsContext';
 import { mirrorSites } from '@/config/mirror-sites';
+import { useTranslation } from '@/i18n';
 import type { InputType } from '@/lib/help/types';
 
 interface HelpPageData {
@@ -60,6 +61,7 @@ function HelpSettingsBar() {
     setSudoEnabled,
     setHttpsEnabled,
   } = useHelpSettings();
+  const { t } = useTranslation();
 
   const handleSiteChange = useCallback(
     (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -72,7 +74,7 @@ function HelpSettingsBar() {
     <div className="help-settings-bar">
       <div className="help-setting">
         <label className="help-setting-label" htmlFor="help-site-select">
-          Domain
+          {t('help.domain')}
         </label>
         <select
           id="help-site-select"
@@ -162,6 +164,7 @@ function HelpContent({
 
 function HelpPage() {
   const { '*': splat } = useParams();
+  const { t } = useTranslation();
   const [data, setData] = useState<HelpPageData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -200,17 +203,17 @@ function HelpPage() {
       return (
         <div className="help-placeholder">
           <span className="material-icons" style={{ fontSize: 40, color: 'var(--text-faint)' }}>menu_book</span>
-          <p>Select a page from the sidebar to get started.</p>
+          <p>{t('help.selectPage')}</p>
         </div>
       );
     }
     if (loading) {
-      return <div className="help-loading">Loading...</div>;
+      return <div className="help-loading">{t('help.loading')}</div>;
     }
     if (error || !data) {
       return (
         <div className="help-error">
-          <p>Page not found: {splat}</p>
+          <p>{t('help.pageNotFound', { page: splat })}</p>
         </div>
       );
     }
@@ -227,7 +230,7 @@ function HelpPage() {
     <aside className="help-toc">
       <div className="help-toc-header">
         <span className="material-icons" style={{ fontSize: 20 }}>toc</span>
-        <span className="help-toc-title">On this page</span>
+        <span className="help-toc-title">{t('help.tocTitle')}</span>
       </div>
       <nav className="help-toc-list">
         {data.toc.map((heading, i) => (

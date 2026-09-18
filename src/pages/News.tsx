@@ -1,14 +1,16 @@
 import { Link } from 'react-router';
 import { getAllPosts } from '@/lib/news';
+import { useTranslation } from '@/i18n';
 
 export default function News() {
   const posts = getAllPosts();
+  const { t } = useTranslation();
 
   return (
     <div className="news-list">
-      <h1>News &amp; Announcements</h1>
+      <h1>{t('news.title')}</h1>
       {posts.length === 0 ? (
-        <p style={{ color: 'var(--text-muted)' }}>No news posts yet.</p>
+        <p style={{ color: 'var(--text-muted)' }}>{t('news.empty')}</p>
       ) : (
         posts.map((post) => (
           <div className="news-item" key={post.slug}>

@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "mirrors": "Mirrors",
+    "downloads": "Downloads",
+    "news": "News",
+    "help": "Help",
+    "about": "About",
+    "settings": "Settings"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "themeSystem": "System",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "language": "Language"
+  },
+  "home": {
+    "loading": "Loading...",
+    "error": "Failed to load mirrors",
+    "filterPlaceholder": "Press / to filter (regex supported)",
+    "clearFilter": "Clear filter",
+    "mirrorCount": "{shown} / {total} mirrors",
+    "lastUpdate": "Last update:",
+    "lastStarted": "Last started:",
+    "lastEnded": "Last ended:",
+    "nextSchedule": "Next schedule:"
+  },
+  "download": {
+    "title": "Download Browser",
+    "subtitle": "Browse available mirrors by category and distribution",
+    "loading": "Loading...",
+    "error": "Failed to load downloads",
+    "categoryNotFound": "Category not found",
+    "operatingSystems": "Operating Systems",
+    "apps": "Apps",
+    "fonts": "Fonts",
+    "filterPlaceholder": "Press / to filter",
+    "noDownloads": "No downloads found for \"{distro}\"",
+    "selectDistro": "Select a distribution"
+  },
+  "news": {
+    "title": "News & Announcements",
+    "empty": "No news posts yet.",
+    "articleNotFound": "Article not found.",
+    "backToNews": "Back to news",
+    "backArrow": "← Back to news"
+  },
+  "help": {
+    "loading": "Loading...",
+    "filterPlaceholder": "Press / to filter",
+    "noMatches": "No matches",
+    "selectPage": "Select a page from the sidebar to get started.",
+    "pageNotFound": "Page not found: {page}",
+    "tocTitle": "On this page",
+    "domain": "Domain"
+  },
+  "time": {
+    "justNow": "just now",
+    "secondsAgo": "{n} seconds ago",
+    "minuteAgo": "{n} minute ago",
+    "minutesAgo": "{n} minutes ago",
+    "hourAgo": "{n} hour ago",
+    "hoursAgo": "{n} hours ago",
+    "dayAgo": "{n} day ago",
+    "daysAgo": "{n} days ago",
+    "monthAgo": "{n} month ago",
+    "monthsAgo": "{n} months ago",
+    "yearAgo": "{n} year ago",
+    "yearsAgo": "{n} years ago",
+    "inSeconds": "in {n} seconds",
+    "inMinute": "in {n} minute",
+    "inMinutes": "in {n} minutes",
+    "inHour": "in {n} hour",
+    "inHours": "in {n} hours",
+    "inDay": "in {n} day",
+    "inDays": "in {n} days",
+    "inMonth": "in {n} month",
+    "inMonths": "in {n} months",
+    "inYear": "in {n} year",
+    "inYears": "in {n} years"
+  }
+}

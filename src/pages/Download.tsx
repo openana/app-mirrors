@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useDownloadList } from '@/lib/client/downloads';
+import { useTranslation } from '@/i18n';
 
 function priority(c: string): number {
   if (c === 'os') return 0;
@@ -13,6 +14,7 @@ export default function Download() {
   const { category = 'os', distro } = useParams();
   const navigate = useNavigate();
   const { data: siteData, error, isLoading } = useDownloadList();
+  const { t } = useTranslation();
   const [distroFilter, setDistroFilter] = useState('');
   const filterInputRef = useRef<HTMLInputElement>(null);
 
@@ -60,9 +62,9 @@ export default function Download() {
     }
   }, [category, distro, allCat, allDistro, siteData, navigate]);
 
-  if (error) return <div className="download-page"><div className="page-head">Failed to load downloads</div></div>;
-  if (isLoading) return <div className="download-page"><div className="page-head">Loading...</div></div>;
-  if (!allCat.has(category)) return <div className="download-page"><div className="page-head">Category not found</div></div>;
+  if (error) return <div className="download-page"><div className="page-head">{t('download.error')}</div></div>;
+  if (isLoading) return <div className="download-page"><div className="page-head">{t('download.loading')}</div></div>;
+  if (!allCat.has(category)) return <div className="download-page"><div className="page-head">{t('download.categoryNotFound')}</div></div>;
 
   const categories = Array.from(allCat).sort((a, b) => priority(a) - priority(b));
   const distros = Object.entries(allDistro)
@@ -73,8 +75,8 @@ export default function Download() {
   return (
     <div className="download-page">
       <header className="page-head">
-        <h1 className="tagline">Download Browser</h1>
-        <p className="tagline-sub">Browse available mirrors by category and distribution</p>
+        <h1 className="tagline">{t('download.title')}</h1>
+        <p className="tagline-sub">{t('download.subtitle')}</p>
         <div className="category-tabs">
           {categories.map((c) => (
             <Link
@@ -82,7 +84,7 @@ export default function Download() {
               to={`/download/${c.replace(/\s/g, '')}`}
               className={c.replace(/\s/g, '') === category ? 'active' : ''}
             >
-              <h2>{c === 'os' ? 'Operating Systems' : c}</h2>
+              <h2>{c === 'os' ? t('download.operatingSystems') : c === 'app' ? t('download.apps') : c === 'font' ? t('download.fonts') : c}</h2>
             </Link>
           ))}
         </div>
@@ -95,7 +97,7 @@ export default function Download() {
               ref={filterInputRef}
               value={distroFilter}
               onChange={(e) => setDistroFilter(e.target.value)}
-              placeholder="Press / to filter"
+              placeholder={t('download.filterPlaceholder')}
             />
           </div>
           <div className="distro-list">
@@ -117,7 +119,7 @@ export default function Download() {
         <div className="urls">
           {matchingUrls.length === 0 ? (
             <div style={{ padding: '20px 0', color: 'var(--text-muted)' }}>
-              {distro ? `No downloads found for "${distro}"` : 'Select a distribution'}
+              {distro ? t('download.noDownloads', { distro }) : t('download.selectDistro')}
             </div>
           ) : (
             <ul>

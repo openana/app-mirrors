@@ -1,4 +1,4 @@
-import { relativeTime } from '@/lib/client/utils';
+import { useLocalizedTime } from '@/i18n/localized-time';
 
 const STATUS_CLASS: Record<string, string> = {
   success: 'success',
@@ -39,6 +39,7 @@ export function StatusDot({ status }: { status: string }) {
 }
 
 export function Summary({ statuses, lastUpdateTs }: { statuses: string[]; lastUpdateTs: number }) {
+  const { relativeTime } = useLocalizedTime();
   const present = new Set(statuses.map((s) => STATUS_CLASS[s] || 'unknown'));
   return (
     <h2 className="summary">
@@ -57,6 +58,7 @@ export function Summary({ statuses, lastUpdateTs }: { statuses: string[]; lastUp
 }
 
 export function StatusList({ status, lastUpdateTs }: { status: string; lastUpdateTs: number }) {
+  const { relativeTime } = useLocalizedTime();
   const cls = STATUS_CLASS[status] || 'unknown';
   const icon = STATUS_ICON[status] || 'info';
   return (

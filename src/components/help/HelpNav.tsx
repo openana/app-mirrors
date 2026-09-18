@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router';
 import { useMirrors } from '@/lib/client/mirrors';
+import { useTranslation } from '@/i18n';
 
 interface HelpNavProps {
   /** Current active help page href, e.g. "/help/AOSP/" */
@@ -9,6 +10,7 @@ interface HelpNavProps {
 
 export default function HelpNav({ activeHref }: HelpNavProps) {
   const { data: mirrors } = useMirrors();
+  const { t } = useTranslation();
   const [routes, setRoutes] = useState<Record<string, { title: string; cname: string }>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -62,7 +64,7 @@ export default function HelpNav({ activeHref }: HelpNavProps) {
     );
   }, [entries, regex]);
 
-  if (loading) return <aside className="help-nav"><div className="help-loading">Loading...</div></aside>;
+  if (loading) return <aside className="help-nav"><div className="help-loading">{t('help.loading')}</div></aside>;
 
   return (
     <aside className="help-nav">
@@ -72,12 +74,12 @@ export default function HelpNav({ activeHref }: HelpNavProps) {
           ref={filterRef}
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          placeholder="Press / to filter"
+          placeholder={t('help.filterPlaceholder')}
         />
       </div>
       <div className="help-nav-list">
         {filtered.length === 0 ? (
-          <div className="help-nav-empty">No matches</div>
+          <div className="help-nav-empty">{t('help.noMatches')}</div>
         ) : (
           filtered.map(([href, meta]) => (
             <Link

@@ -1,14 +1,16 @@
 import { useParams, Link } from 'react-router';
 import { getPostBySlug } from '@/lib/news';
+import { useTranslation } from '@/i18n';
 
 export default function NewsArticle() {
   const { slug } = useParams();
   const post = slug ? getPostBySlug(slug) : undefined;
+  const { t } = useTranslation();
 
   if (!post) {
     return (
       <div className="news-article">
-        <p>Article not found. <Link to="/news/">Back to news</Link></p>
+        <p>{t('news.articleNotFound')} <Link to="/news/">{t('news.backToNews')}</Link></p>
       </div>
     );
   }
@@ -16,7 +18,7 @@ export default function NewsArticle() {
   return (
     <div className="news-article">
       <Link to="/news/" style={{ fontSize: 14, marginBottom: 16, display: 'inline-block' }}>
-        ← Back to news
+        {t('news.backArrow')}
       </Link>
       <p className="news-date">{post.date}</p>
       <h1>{post.title}</h1>

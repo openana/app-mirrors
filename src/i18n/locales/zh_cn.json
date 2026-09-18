@@ -1,0 +1,83 @@
+{
+  "nav": {
+    "mirrors": "镜像列表",
+    "downloads": "下载",
+    "news": "新闻",
+    "help": "帮助",
+    "about": "关于",
+    "settings": "设置"
+  },
+  "settings": {
+    "title": "设置",
+    "theme": "主题",
+    "themeSystem": "跟随系统",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "language": "语言"
+  },
+  "home": {
+    "loading": "加载中...",
+    "error": "加载镜像列表失败",
+    "filterPlaceholder": "按 / 键筛选（支持正则表达式）",
+    "clearFilter": "清除筛选",
+    "mirrorCount": "{shown} / {total} 个镜像",
+    "lastUpdate": "最近更新：",
+    "lastStarted": "最近开始：",
+    "lastEnded": "最近结束：",
+    "nextSchedule": "下次计划："
+  },
+  "download": {
+    "title": "下载浏览",
+    "subtitle": "按分类和发行版浏览可用镜像",
+    "loading": "加载中...",
+    "error": "加载下载列表失败",
+    "categoryNotFound": "未找到分类",
+    "operatingSystems": "操作系统",
+    "apps": "应用程序",
+    "fonts": "字体",
+    "filterPlaceholder": "按 / 键筛选",
+    "noDownloads": "未找到 \"{distro}\" 的下载内容",
+    "selectDistro": "请选择一个发行版"
+  },
+  "news": {
+    "title": "新闻与公告",
+    "empty": "暂无新闻。",
+    "articleNotFound": "文章未找到。",
+    "backToNews": "返回新闻列表",
+    "backArrow": "← 返回新闻列表"
+  },
+  "help": {
+    "loading": "加载中...",
+    "filterPlaceholder": "按 / 键筛选",
+    "noMatches": "无匹配结果",
+    "selectPage": "请从侧边栏选择一个页面开始阅读。",
+    "pageNotFound": "页面未找到：{page}",
+    "tocTitle": "本页目录",
+    "domain": "域名"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "secondsAgo": "{n} 秒前",
+    "minuteAgo": "{n} 分钟前",
+    "minutesAgo": "{n} 分钟前",
+    "hourAgo": "{n} 小时前",
+    "hoursAgo": "{n} 小时前",
+    "dayAgo": "{n} 天前",
+    "daysAgo": "{n} 天前",
+    "monthAgo": "{n} 个月前",
+    "monthsAgo": "{n} 个月前",
+    "yearAgo": "{n} 年前",
+    "yearsAgo": "{n} 年前",
+    "inSeconds": "{n} 秒后",
+    "inMinute": "{n} 分钟后",
+    "inMinutes": "{n} 分钟后",
+    "inHour": "{n} 小时后",
+    "inHours": "{n} 小时后",
+    "inDay": "{n} 天后",
+    "inDays": "{n} 天后",
+    "inMonth": "{n} 个月后",
+    "inMonths": "{n} 个月后",
+    "inYear": "{n} 年后",
+    "inYears": "{n} 年后"
+  }
+}

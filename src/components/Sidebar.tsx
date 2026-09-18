@@ -1,24 +1,27 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, NavLink } from 'react-router';
 import { useTheme, type ThemePreference } from '@/contexts/ThemeContext';
+import { useTranslation, useLocale, type Locale } from '@/i18n';
 
 interface NavItem {
-  label: string;
+  labelKey: string;
   href: string;
   icon: string;
   external?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
-  { label: 'Mirrors', href: '/', icon: 'list_alt' },
-  { label: 'Downloads', href: '/download/', icon: 'get_app' },
-  { label: 'News', href: '/news/', icon: 'newspaper' },
-  { label: 'Help', href: '/help/', icon: 'help_outline' },
-  { label: 'About', href: '/about/', icon: 'info_outline' },
+  { labelKey: 'nav.mirrors', href: '/', icon: 'list_alt' },
+  { labelKey: 'nav.downloads', href: '/download/', icon: 'get_app' },
+  { labelKey: 'nav.news', href: '/news/', icon: 'newspaper' },
+  { labelKey: 'nav.help', href: '/help/', icon: 'help_outline' },
+  { labelKey: 'nav.about', href: '/about/', icon: 'info_outline' },
 ];
 
 export default function Sidebar() {
   const { theme, preference, setPreference } = useTheme();
+  const { t } = useTranslation();
+  const { locale, setLocale, localeLabels } = useLocale();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const settingsButton = useRef<HTMLButtonElement>(null);
   const settingsPanel = useRef<HTMLDivElement>(null);
@@ -50,9 +53,9 @@ export default function Sidebar() {
   }, [settingsOpen]);
 
   const themeOptions: [ThemePreference, string, string][] = [
-    ['system', 'computer', 'System'],
-    ['light', 'light_mode', 'Light'],
-    ['dark', 'dark_mode', 'Dark'],
+    ['system', 'computer', t('settings.themeSystem')],
+    ['light', 'light_mode', t('settings.themeLight')],
+    ['dark', 'dark_mode', t('settings.themeDark')],
   ];
 
   return (
@@ -72,7 +75,7 @@ export default function Sidebar() {
               {item.icon}
             </span>
             <h2>
-              {item.label}
+              {t(item.labelKey)}
               <span className="external-link-icon" aria-hidden="true">
                 ↗
               </span>
@@ -88,7 +91,7 @@ export default function Sidebar() {
             <span className="material-icons" aria-hidden="true">
               {item.icon}
             </span>
-            <h2>{item.label}</h2>
+            <h2>{t(item.labelKey)}</h2>
           </NavLink>
         ),
       )}
@@ -101,7 +104,7 @@ export default function Sidebar() {
         ref={settingsButton}
       >
         <span className="material-icons" aria-hidden="true">settings</span>
-        <span className="nav-label">Settings</span>
+        <span className="nav-label">{t('nav.settings')}</span>
       </button>
       {settingsOpen && (
         <div
@@ -111,11 +114,11 @@ export default function Sidebar() {
           aria-label="Settings"
           ref={settingsPanel}
         >
-          <div className="settings-panel-title">Settings</div>
+          <div className="settings-panel-title">{t('settings.title')}</div>
           <div className="settings-section">
             <div className="settings-section-label">
               <span className="material-icons" aria-hidden="true" style={{ fontSize: 18 }}>contrast</span>
-              <strong>Theme</strong>
+              <strong>{t('settings.theme')}</strong>
             </div>
             <div className="settings-options" role="radiogroup" aria-label="Theme">
               {themeOptions.map(([value, icon, label]) => (
@@ -128,6 +131,26 @@ export default function Sidebar() {
                   onClick={() => setPreference(value)}
                 >
                   <span className="material-icons" style={{ fontSize: 18 }}>{icon}</span>
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="settings-section">
+            <div className="settings-section-label">
+              <span className="material-icons" aria-hidden="true" style={{ fontSize: 18 }}>translate</span>
+              <strong>{t('settings.language')}</strong>
+            </div>
+            <div className="settings-options" role="radiogroup" aria-label="Language">
+              {(Object.entries(localeLabels) as [Locale, string][]).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={`settings-choice${locale === value ? ' active' : ''}`}
+                  role="radio"
+                  aria-checked={locale === value}
+                  onClick={() => setLocale(value)}
+                >
                   <span>{label}</span>
                 </button>
               ))}

@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useMirrors, useHelpRoutes } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
-import { Summary, StatusList } from '@/components/Status';
+import { Summary } from '@/components/Status';
 import type { MirrorEntry } from '@/lib/client/types';
 
 interface MirrorGroup {
@@ -10,6 +10,16 @@ interface MirrorGroup {
 }
 
 type HelpRoutes = Record<string, { title: string; cname: string }>;
+
+function formatRFC3339(ts: number): string {
+  if (ts <= 0) return '-';
+  const d = new Date(ts * 1000);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const offset = d.getTimezoneOffset();
+  const sign = offset <= 0 ? '+' : '-';
+  const absOffset = Math.abs(offset);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
+}
 
 function GroupCard({
   group,
@@ -57,7 +67,15 @@ function GroupCard({
                     {entry.upstream}
                   </div>
                 )}
-                <StatusList status={entry.status} lastUpdateTs={entry.last_update_ts} />
+                <div className="timestamps">
+                  <span className="material-icons">schedule</span>
+                  <div className="timestamps-list">
+                    <div><span className="ts-label">Last update:</span> {formatRFC3339(entry.last_update_ts)}</div>
+                    <div><span className="ts-label">Last started:</span> {formatRFC3339(entry.last_started_ts)}</div>
+                    <div><span className="ts-label">Last ended:</span> {formatRFC3339(entry.last_ended_ts)}</div>
+                    <div><span className="ts-label">Next schedule:</span> {formatRFC3339(entry.next_schedule_ts)}</div>
+                  </div>
+                </div>
                 {entry.size && (
                   <div className="size">
                     <span className="material-icons">save</span>

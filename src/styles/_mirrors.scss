@@ -138,6 +138,33 @@
   }
 }
 
+.timestamps {
+  font-size: 13.5px;
+  padding: 2.5px 0;
+  color: var(--text-muted);
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+
+  .material-icons {
+    font-size: 15px;
+    width: 24px;
+    color: var(--text-faint);
+    flex-shrink: 0;
+  }
+
+  .timestamps-list {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .ts-label {
+    color: var(--text-faint);
+    display: inline-block;
+    width: 100px;
+  }
+}
+
 .group a.help {
   margin-left: 8px;
   display: flex;

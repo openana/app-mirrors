@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Link } from 'react-router';
+import { useMirrors } from '@/lib/client/mirrors';
 
 interface HelpNavProps {
   /** Current active help page href, e.g. "/help/AOSP/" */
@@ -7,6 +8,7 @@ interface HelpNavProps {
 }
 
 export default function HelpNav({ activeHref }: HelpNavProps) {
+  const { data: mirrors } = useMirrors();
   const [routes, setRoutes] = useState<Record<string, { title: string; cname: string }>>({});
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('');
@@ -33,9 +35,16 @@ export default function HelpNav({ activeHref }: HelpNavProps) {
     return () => window.removeEventListener('keydown', handler);
   }, []);
 
+  const mirrorNames = useMemo(() => {
+    if (!mirrors) return new Set<string>();
+    return new Set(mirrors.map((m) => m.name));
+  }, [mirrors]);
+
   const entries = useMemo(() => {
-    return Object.entries(routes).sort((a, b) => a[1].title.localeCompare(b[1].title));
-  }, [routes]);
+    return Object.entries(routes)
+      .filter(([, meta]) => mirrorNames.has(meta.cname))
+      .sort((a, b) => a[1].title.localeCompare(b[1].title));
+  }, [routes, mirrorNames]);
 
   const regex = useMemo(() => {
     if (!filter) return null;

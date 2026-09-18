@@ -149,6 +149,7 @@ function HelpContent({
             lang={cb.lang}
             filepath={cb.filepath}
             mirrorUrl={selectedSite.endpoint}
+            cname={data.meta.cname}
             sudoEnabled={sudoEnabled}
             httpsEnabled={httpsEnabled}
           />

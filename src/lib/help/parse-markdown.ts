@@ -2,8 +2,8 @@
  * Help docs pipeline — reads from zdoc/ directory, parses YAML configs,
  * and compiles content into a structured format for the frontend.
  *
- * This is a simplified version of mirrorz-help's parse-markdown.ts,
- * adapted for Vite build-time processing.
+ * Uses markdown-it with custom plugins for proper CommonMark parsing,
+ * replacing the previous regex-based approach.
  */
 
 import fs from 'node:fs/promises';
@@ -18,10 +18,13 @@ import type {
   HelpPageData,
   ToC,
 } from './types';
+import { createZdocParser, type ExtractedCodeBlock } from './markdown-it-plugins';
 
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
 }
+
+// ── File loading ────────────────────────────────────────────
 
 async function loadFile(
   docsDir: string,
@@ -98,6 +101,8 @@ async function loadBlock(
   return result.content;
 }
 
+// ── Input transpilation ─────────────────────────────────────
+
 export function transpileInput(name: string, input: ZDocInput): InputType {
   if ('option' in input) {
     const items: [string, MenuValue][] = [];
@@ -159,126 +164,43 @@ export function createInitialState(menus: InputType[]): MenuValue {
   }, {});
 }
 
-function parseContentBlocks(
+// ── Markdown parsing (markdown-it based) ────────────────────
+
+/**
+ * Parse a single markdown block using markdown-it with custom plugins.
+ * Returns rendered HTML plus extracted code blocks and headings.
+ */
+function parseContentBlock(
   content: string,
+  blockPath: string | null,
   inputDefs: Record<string, ZDocInput>,
-  globalBlockCounter: { value: number },
+  _globalBlockCounter: { value: number },
+  pageId: string,
 ): {
   html: string;
-  codeBlocks: Array<{
-    id: string;
-    template: string;
-    menus: InputType[];
-    lang?: string;
-    filepath?: string;
-  }>;
+  codeBlocks: ExtractedCodeBlock[];
   headings: ToC[];
 } {
-  const codeBlocks: Array<{
-    id: string;
-    template: string;
-    menus: InputType[];
-    lang?: string;
-    filepath?: string;
-  }> = [];
-  const headings: ToC[] = [];
-
-  // Extract headings, handling {#custom-id} syntax
-  const headingRegex = /^(#{1,3})\s+(.+)$/gm;
-  let match;
-  while ((match = headingRegex.exec(content)) !== null) {
-    const level = match[1]?.length || 0;
-    const rawText = match[2] || '';
-    // Strip {#custom-id} from the text
-    const text = rawText.replace(/\s*\{#[^}]+\}\s*$/, '');
-    // Use custom ID if provided, otherwise generate from text
-    const customIdMatch = rawText.match(/\{#([^}]+)\}$/);
-    const id = customIdMatch
-      ? customIdMatch[1]
-      : text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-');
-    headings.push({ url: `#${id}`, content: text, depth: level });
-  }
-
-  // Process ztmpl directives into code blocks
-  const processedContent = content.replace(
-    /```{ztmpl([^}]*)}\n([\s\S]*?)```/g,
-    (_match, attrs: string, template: string) => {
-      const langMatch = attrs.match(/lang="([^"]+)"/);
-      const pathMatch = attrs.match(/path="([^"]+)"/);
-      const inputMatch = attrs.match(/input="([^"]+)"/);
-
-      const id = `codeblock-${globalBlockCounter.value++}`;
-
-      // Build menus from input attribute
-      const menus: InputType[] = [];
-      if (inputMatch?.[1]) {
-        const inputNames = inputMatch[1].split(/\s+/);
-        for (const inputName of inputNames) {
-          const inputDef = inputDefs[inputName];
-          if (inputDef) {
-            menus.push(transpileInput(inputName, inputDef));
-          }
-        }
-      }
-
-      codeBlocks.push({
-        id,
-        template: template.trim(),
-        menus,
-        lang: langMatch?.[1],
-        filepath: pathMatch?.[1],
-      });
-
-      return `<codeblock id="${id}" />`;
-    },
+  const { md, result } = createZdocParser(
+    inputDefs,
+    pageId,
+    blockPath,
+    _globalBlockCounter.value,
   );
 
-  // Simple markdown to HTML conversion
-  // Process blockquotes first, then protect them from further processing
-  let html = processedContent
-    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
-    .replace(/(<blockquote>.*<\/blockquote>\n?)+/g, (match) => {
-      // Merge consecutive blockquotes into one
-      const content = match.replace(/<\/blockquote>\n?<blockquote>/g, '<br>');
-      return content;
-    });
+  const html = md.render(content);
 
-  // Replace double newlines with paragraph breaks, but not before/after block elements
-  html = html.replace(/\n\n/g, '\n<p-break>\n');
+  // Advance the global counter to stay in sync.
+  _globalBlockCounter.value += result.codeBlocks.length;
 
-  // Convert headings, handling {#custom-id} syntax
-  const replaceHeading = (_match: string, tag: string, rawText: string) => {
-    const text = rawText.replace(/\s*\{#[^}]+\}\s*$/, '');
-    const customIdMatch = rawText.match(/\{#([^}]+)\}$/);
-    const id = customIdMatch
-      ? customIdMatch[1]
-      : text
-          .toLowerCase()
-          .replace(/[^\w\s-]/g, '')
-          .replace(/\s+/g, '-');
-    return `<${tag} id="${id}">${text}</${tag}>`;
+  return {
+    html,
+    codeBlocks: result.codeBlocks,
+    headings: result.toc,
   };
-
-  html = html
-    .replace(/^### (.+)$/gm, (_, text) => replaceHeading(_, 'h3', text))
-    .replace(/^## (.+)$/gm, (_, text) => replaceHeading(_, 'h2', text))
-    .replace(/^# (.+)$/gm, (_, text) => replaceHeading(_, 'h1', text))
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code>$1</code>')
-    .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
-    .replace(/^- (.+)$/gm, '<li>$1</li>')
-    .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
-    .replace(/^(?!<[hulob/])(.+)$/gm, '<p>$1</p>')
-    .replace(/<p><\/p>/g, '')
-    .replace(/<p-break>/g, '</p><p>')
-    .replace(/<p><\/p>/g, '');
-
-  return { html, codeBlocks, headings };
 }
+
+// ── Top-level orchestration ─────────────────────────────────
 
 export async function getContentBySegments(
   docsDir: string,
@@ -295,13 +217,7 @@ export async function getContentBySegments(
 
   const blockNames = conf.block || ['index'];
   const blocks: string[] = [];
-  const allCodeBlocks: Array<{
-    id: string;
-    template: string;
-    menus: InputType[];
-    lang?: string;
-    filepath?: string;
-  }> = [];
+  const allCodeBlocks: ExtractedCodeBlock[] = [];
   const allHeadings: ToC[] = [];
   const globalBlockCounter = { value: 0 };
 
@@ -309,10 +225,13 @@ export async function getContentBySegments(
     const content = await loadBlock(docsDir, id, blockName, language);
     if (!content) continue;
 
-    const { html, codeBlocks, headings } = parseContentBlocks(
+    const blockPath = path.join(docsDir, id, `${blockName}.${language}.md`);
+    const { html, codeBlocks, headings } = parseContentBlock(
       content,
+      blockPath,
       conf.input,
       globalBlockCounter,
+      id,
     );
     blocks.push(html);
     allCodeBlocks.push(...codeBlocks);
@@ -335,11 +254,12 @@ export async function getContentBySegments(
       cname: id,
     },
     compiledTemplates,
-    codeBlocks: allCodeBlocks.map(({ id, menus, lang, filepath }) => ({
+    codeBlocks: allCodeBlocks.map(({ id, menus, lang, filepath, append }) => ({
       id,
       menus,
       lang,
       filepath,
+      append,
     })),
   };
 }

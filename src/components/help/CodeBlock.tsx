@@ -10,6 +10,8 @@ interface CodeBlockProps {
   filepath?: string;
   /** Mirror endpoint URL, e.g. "mirrors.tuna.tsinghua.edu.cn" */
   mirrorUrl?: string;
+  /** Page slug, e.g. "debian" — appended to endpoint */
+  cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
 }
@@ -32,20 +34,39 @@ function CodeBlockMenu({
   menus,
   state,
   onChange,
+  selectedIndices,
+  onSelectChange,
 }: {
   menus: InputType[];
   state: MenuValue;
   onChange: (newState: MenuValue) => void;
+  selectedIndices: number[];
+  onSelectChange: (menuIndex: number, itemIndex: number) => void;
 }) {
   const handleSelectChange = (
     menuIndex: number,
     e: React.ChangeEvent<HTMLSelectElement>,
   ) => {
-    const itemIndex = Number.parseInt(e.target.value, 10);
+    const newItemIndex = Number.parseInt(e.target.value, 10);
     const menu = menus[menuIndex];
     if (!menu || !('items' in menu)) return;
-    const [, values] = menu.items[itemIndex] || [];
-    if (values) onChange({ ...state, ...values });
+
+    // Remove keys from the old item's values
+    const oldItemIndex = selectedIndices[menuIndex] ?? 0;
+    const [, oldValues] = menu.items[oldItemIndex] || [];
+    const newState = { ...state };
+    if (oldValues) {
+      for (const key of Object.keys(oldValues)) {
+        delete newState[key];
+      }
+    }
+
+    // Add the new item's values
+    const [, newValues] = menu.items[newItemIndex] || [];
+    if (newValues) Object.assign(newState, newValues);
+
+    onSelectChange(menuIndex, newItemIndex);
+    onChange(newState);
   };
 
   const handleTextChange = (
@@ -126,11 +147,15 @@ export default function CodeBlock({
   lang,
   filepath,
   mirrorUrl,
+  cname,
   sudoEnabled = false,
   httpsEnabled = true,
 }: CodeBlockProps) {
   const [menuState, setMenuState] = useState<MenuValue>(() =>
     createInitialState(menus),
+  );
+  const [selectedIndices, setSelectedIndices] = useState<number[]>(() =>
+    menus.map((menu) => ('items' in menu ? 0 : -1)),
   );
   const [copied, setCopied] = useState(false);
 
@@ -142,7 +167,7 @@ export default function CodeBlock({
       const template = Hogan.compile(rawTemplate);
       const scheme = httpsEnabled ? 'https' : 'http';
       const endpoint = mirrorUrl
-        ? `${scheme}://${mirrorUrl}`
+        ? `${scheme}://${mirrorUrl}${cname ? `/${cname}` : ''}`
         : '(no mirror selected)';
       const vars: MenuValue = {
         ...menuState,
@@ -174,6 +199,14 @@ export default function CodeBlock({
           menus={menus}
           state={menuState}
           onChange={setMenuState}
+          selectedIndices={selectedIndices}
+          onSelectChange={(menuIndex, itemIndex) => {
+            setSelectedIndices((prev) => {
+              const next = [...prev];
+              next[menuIndex] = itemIndex;
+              return next;
+            });
+          }}
         />
       )}
       <div className="codeblock-wrapper">

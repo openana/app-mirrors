@@ -17,6 +17,7 @@ export interface HelpPageData {
     menus: InputType[];
     lang?: string;
     filepath?: string;
+    append?: boolean;
   }>;
 }
 

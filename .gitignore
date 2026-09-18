@@ -1,1 +1,7 @@
+node_modules
+dist
 /reference
+*.local
+.env
+.env.*
+!.env.example

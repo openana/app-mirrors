@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useMirrors } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
 import { Summary, StatusList } from '@/components/Status';
@@ -65,6 +65,18 @@ export default function Home() {
   const { data: mirrors, error, isLoading } = useMirrors();
   const [filter, setFilter] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const filterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        filterInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const toggleGroup = useCallback((name: string) => {
     setExpandedGroups((prev) => {
@@ -122,9 +134,10 @@ export default function Home() {
             <span className="material-icons" aria-hidden="true">search</span>
           </span>
           <input
+            ref={filterInputRef}
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            placeholder="Filter mirrors... (regex supported)"
+            placeholder="Press / to filter (regex supported)"
           />
           <button
             type="button"

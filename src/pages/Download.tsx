@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useParams, useNavigate, Link } from 'react-router';
 import { useDownloadList } from '@/lib/client/downloads';
 
@@ -14,6 +14,18 @@ export default function Download() {
   const navigate = useNavigate();
   const { data: siteData, error, isLoading } = useDownloadList();
   const [distroFilter, setDistroFilter] = useState('');
+  const filterInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === '/' && document.activeElement?.tagName !== 'INPUT') {
+        e.preventDefault();
+        filterInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
 
   const { allCat, allDistro, matchingUrls } = useMemo(() => {
     if (!siteData) return { allCat: new Set<string>(), allDistro: {} as Record<string, string>, matchingUrls: [] as { name: string; url: string }[] };
@@ -80,9 +92,10 @@ export default function Download() {
           <div className="mini-search">
             <span className="material-icons" style={{ fontSize: 16 }}>search</span>
             <input
+              ref={filterInputRef}
               value={distroFilter}
               onChange={(e) => setDistroFilter(e.target.value)}
-              placeholder="Filter..."
+              placeholder="Press / to filter"
             />
           </div>
           <div className="distro-list">

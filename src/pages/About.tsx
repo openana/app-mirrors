@@ -64,7 +64,7 @@ export default function About() {
               <h3>GitHub 工单</h3>
               <p>
                 在我们的{' '}
-                <a href="https://github.com/openana/mirrors.xjtu.edu.cn/issues/new" target="_blank" rel="noopener">
+                <a href="https://github.com/openana/issues/issues" target="_blank" rel="noopener">
                   GitHub 公开仓库
                 </a>{' '}
                 中提交工单。为了使您的提问能够给后来者提供参考，我们推荐您使用此方式。

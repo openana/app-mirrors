@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { useMirrors } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
 import { Summary, StatusList } from '@/components/Status';
@@ -19,6 +19,7 @@ function GroupCard({
   onToggle: () => void;
 }) {
   const statuses = group.entries.map((e) => e.status);
+  const lastUpdateTs = Math.max(0, ...group.entries.map((e) => e.last_update_ts));
   return (
     <div className={`group${expanded ? ' group-expanded' : ''}`}>
       <div className="group-header" onClick={onToggle}>
@@ -28,7 +29,7 @@ function GroupCard({
           </span>
           {group.name}
         </h2>
-        <Summary statuses={statuses} />
+        <Summary statuses={statuses} lastUpdateTs={lastUpdateTs} />
       </div>
       <div className="group-items">
         {expanded &&
@@ -65,7 +66,9 @@ export default function Home() {
   const { data: mirrors, error, isLoading } = useMirrors();
   const [filter, setFilter] = useState('');
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+  const [columnCount, setColumnCount] = useState(1);
   const filterInputRef = useRef<HTMLInputElement>(null);
+  const mirrorsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -121,7 +124,27 @@ export default function Home() {
       });
   }, [groups, regex]);
 
+  useLayoutEffect(() => {
+    const el = mirrorsRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const style = getComputedStyle(el);
+      const width = el.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+      setColumnCount(Math.max(1, Math.floor((width + 36) / (380 + 36))));
+    };
+    update();
+
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [filtered]);
+
   const shownCount = filtered.filter((g) => !g.filtered).length;
+
+  const visibleGroups = filtered.filter((g) => !g.filtered);
+  const columns = Array.from({ length: columnCount }, () => [] as typeof visibleGroups);
+  visibleGroups.forEach((group, index) => columns[index % columnCount].push(group));
 
   if (error) return <div className="mirrorz"><div className="toolbar">Failed to load mirrors</div></div>;
   if (isLoading) return <div className="mirrorz"><div className="toolbar">Loading...</div></div>;
@@ -153,11 +176,10 @@ export default function Home() {
           {shownCount} / {groups.length} mirrors
         </span>
       </div>
-      <div className="mirrors">
-        <div className="mirror-column">
-          {filtered
-            .filter((g) => !g.filtered)
-            .map((group) => (
+      <div className="mirrors" ref={mirrorsRef}>
+        {columns.map((column, columnIndex) => (
+          <div className="mirror-column" key={columnIndex}>
+            {column.map((group) => (
               <GroupCard
                 key={group.name}
                 group={group}
@@ -165,7 +187,8 @@ export default function Home() {
                 onToggle={() => toggleGroup(group.name)}
               />
             ))}
-        </div>
+          </div>
+        ))}
       </div>
     </div>
   );

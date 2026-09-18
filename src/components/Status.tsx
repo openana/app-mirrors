@@ -38,23 +38,17 @@ export function StatusDot({ status }: { status: string }) {
   return <span className={`status-dot ${cls}`} />;
 }
 
-export function Summary({ statuses }: { statuses: string[] }) {
-  const counts: Record<string, number> = {};
-  for (const s of statuses) {
-    const cls = STATUS_CLASS[s] || 'unknown';
-    counts[cls] = (counts[cls] || 0) + 1;
-  }
+export function Summary({ statuses, lastUpdateTs }: { statuses: string[]; lastUpdateTs: number }) {
+  const present = new Set(statuses.map((s) => STATUS_CLASS[s] || 'unknown'));
   return (
     <h2 className="summary">
-      {MAIN_STATUSES.map((s) => {
+      {MAIN_STATUSES.filter((s) => present.has(STATUS_CLASS[s] || 'unknown')).map((s) => {
         const cls = STATUS_CLASS[s] || 'unknown';
-        const count = counts[cls] || 0;
-        if (count === 0) return null;
         const icon = STATUS_ICON[s] || 'info';
         return (
           <span className={cls} key={s}>
-            {count}
             <span className="material-icons" style={{ fontSize: 14 }}>{icon}</span>
+            {lastUpdateTs > 0 && relativeTime(lastUpdateTs)}
           </span>
         );
       })}

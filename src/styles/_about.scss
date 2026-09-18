@@ -1,0 +1,160 @@
+// About page styles — ported from mirrorz about.scss
+@use 'consts' as *;
+@use 'fonts' as *;
+
+.about {
+  height: 100%;
+  width: 100%;
+  overflow-y: auto;
+}
+
+.about-col {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 30px 28px 60px;
+}
+
+.about-title {
+  margin: 0 0 30px;
+  font-size: 30px;
+  line-height: 1.2;
+  @include sans;
+}
+
+.para {
+  margin: 0 0 30px;
+}
+
+.para-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  margin: 0 0 8px;
+  @include sans;
+}
+
+.para-title-icon {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border-radius: var(--radius);
+  background: var(--accent-tint);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  .material-icons {
+    font-size: 19px;
+  }
+}
+
+.para-title-text {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.para-description {
+  margin: 0 0 10px;
+  padding: 0 0 0 43px;
+  color: var(--text-muted);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.para-content {
+  padding: 0 0 0 43px;
+  font-size: 15.5px;
+  line-height: 1.6;
+
+  p {
+    margin: 0 0 8px;
+  }
+
+  ul {
+    margin: 4px 0;
+    padding-left: 22px;
+    line-height: 1.7;
+  }
+}
+
+.about-guide {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.about-guide-item {
+  padding: 16px 18px;
+  border-left: 3px solid var(--accent);
+  background: var(--accent-tint);
+  border-radius: var(--radius-sm);
+
+  h3 {
+    margin-top: 0;
+  }
+
+  p {
+    margin-bottom: 0;
+    line-height: 1.55;
+  }
+}
+
+.about-url-list {
+  min-width: 0;
+  padding-left: 24px;
+
+  li,
+  a {
+    overflow-wrap: anywhere;
+  }
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
+  .about-col {
+    padding: 18px 14px 40px;
+  }
+
+  .about-title {
+    margin-bottom: 22px;
+    font-size: 26px;
+  }
+
+  .para {
+    margin-bottom: 22px;
+  }
+
+  .para-title-icon {
+    width: 28px;
+    height: 28px;
+    flex-basis: 28px;
+
+    .material-icons {
+      font-size: 17px;
+    }
+  }
+
+  .para-title-text {
+    font-size: 17px;
+  }
+
+  .para-content {
+    padding-left: 0;
+    font-size: 15px;
+    overflow-wrap: anywhere;
+  }
+
+  .para-description {
+    padding-left: 0;
+    font-size: 14.5px;
+  }
+
+  .about-guide {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}

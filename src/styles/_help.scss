@@ -1,6 +1,7 @@
 // Help page styles
 @use 'consts' as *;
 @use 'fonts' as *;
+@use 'prism' as *;
 
 .help-page {
   display: flex;

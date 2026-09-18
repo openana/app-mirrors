@@ -16,6 +16,7 @@
     "github-slugger": "^2.0.0",
     "hogan.js": "^3.0.2",
     "markdown-it": "^15.0.2",
+    "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router": "^7.6.0",

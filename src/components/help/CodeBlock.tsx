@@ -1,5 +1,13 @@
 import { useState, useMemo, useCallback } from 'react';
 import Hogan from 'hogan.js';
+import Prism from 'prismjs';
+import 'prismjs/components/prism-bash';
+import 'prismjs/components/prism-ini';
+import 'prismjs/components/prism-json';
+import 'prismjs/components/prism-markup';
+import 'prismjs/components/prism-nginx';
+import 'prismjs/components/prism-python';
+import 'prismjs/components/prism-yaml';
 import type { InputType, MenuValue } from '@/lib/help/types';
 
 interface CodeBlockProps {
@@ -185,6 +193,18 @@ export default function CodeBlock({
     }
   }, [templateId, compiledTemplates, menuState, mirrorUrl, sudoEnabled, httpsEnabled]);
 
+  const highlightedCode = useMemo(() => {
+    if (!lang || !renderedCode) return null;
+    const prismLang = lang === 'shell' || lang === 'bash' ? 'bash' : lang;
+    const grammar = Prism.languages[prismLang];
+    if (!grammar) return null;
+    try {
+      return Prism.highlight(renderedCode, grammar, prismLang);
+    } catch {
+      return null;
+    }
+  }, [renderedCode, lang]);
+
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(renderedCode).then(() => {
       setCopied(true);
@@ -225,7 +245,11 @@ export default function CodeBlock({
           </button>
         </div>
         <pre className={`codeblock-pre${lang ? ` language-${lang}` : ''}`}>
-          <code>{renderedCode}</code>
+          <code
+            dangerouslySetInnerHTML={{
+              __html: highlightedCode || renderedCode,
+            }}
+          />
         </pre>
       </div>
     </div>

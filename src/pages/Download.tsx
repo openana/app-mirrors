@@ -15,30 +15,25 @@ export default function Download() {
   const { data: siteData, error, isLoading } = useDownloadList();
   const [distroFilter, setDistroFilter] = useState('');
 
-  const { allCat, allDistro, urls } = useMemo(() => {
-    if (!siteData) return { allCat: new Set<string>(), allDistro: {} as Record<string, string>, urls: [] as { site: string; urls: { name: string; url: string }[] }[] };
+  const { allCat, allDistro, matchingUrls } = useMemo(() => {
+    if (!siteData) return { allCat: new Set<string>(), allDistro: {} as Record<string, string>, matchingUrls: [] as { name: string; url: string }[] };
 
     const allCat = new Set<string>();
     const allDistro: Record<string, string> = {};
-    const urlMap: Record<string, { name: string; url: string }[]> = {};
+    const matchingUrls: { name: string; url: string }[] = [];
 
-    for (const site of siteData) {
-      for (const info of site.info) {
-        allCat.add(info.category);
-        allDistro[info.distro] = info.category;
-        if (
-          info.category.replace(/\s/g, '') === category &&
-          info.distro.replace(/\s/g, '') === (distro || '')
-        ) {
-          const key = site.site.abbr;
-          if (!urlMap[key]) urlMap[key] = [];
-          urlMap[key].push(...info.urls);
-        }
+    for (const entry of siteData) {
+      allCat.add(entry.category);
+      allDistro[entry.distro] = entry.category;
+      if (
+        entry.category.replace(/\s/g, '') === category &&
+        entry.distro.replace(/\s/g, '') === (distro || '')
+      ) {
+        matchingUrls.push(...entry.urls);
       }
     }
 
-    const urls = Object.entries(urlMap).map(([site, urls]) => ({ site, urls }));
-    return { allCat, allDistro, urls };
+    return { allCat, allDistro, matchingUrls };
   }, [siteData, category, distro]);
 
   // Default redirect: /download -> /download/os/ubuntu
@@ -107,23 +102,18 @@ export default function Download() {
           </div>
         </div>
         <div className="urls">
-          {urls.length === 0 ? (
+          {matchingUrls.length === 0 ? (
             <div style={{ padding: '20px 0', color: 'var(--text-muted)' }}>
               {distro ? `No downloads found for "${distro}"` : 'Select a distribution'}
             </div>
           ) : (
-            urls.map(({ site, urls: siteUrls }) => (
-              <div key={site}>
-                <h3>{site}</h3>
-                <ul>
-                  {siteUrls.map(({ name, url }, idx) => (
-                    <li key={`${site}-${name}-${idx}`}>
-                      <a href={url} target="_blank" rel="noopener">{name}</a>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))
+            <ul>
+              {matchingUrls.map(({ name, url }, idx) => (
+                <li key={`${name}-${idx}`}>
+                  <a href={url} target="_blank" rel="noopener">{name}</a>
+                </li>
+              ))}
+            </ul>
           )}
         </div>
       </div>

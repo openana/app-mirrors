@@ -15,8 +15,3 @@ export interface DownloadInfo {
   distro: string;
   urls: { name: string; url: string }[];
 }
-
-export interface SiteData {
-  site: { abbr: string; url: string };
-  info: DownloadInfo[];
-}

@@ -19,6 +19,7 @@
     "yaml": "^2.9.1"
   },
   "devDependencies": {
+    "@types/node": "^26.6.1",
     "@types/react": "^19.1.8",
     "@types/react-dom": "^19.1.6",
     "@vitejs/plugin-react": "^4.5.2",

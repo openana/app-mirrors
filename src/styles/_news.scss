@@ -1,4 +1,6 @@
 // News page styles
+@use 'consts' as *;
+
 .news-list {
   max-width: 760px;
   margin: 0 auto;

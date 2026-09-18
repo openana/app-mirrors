@@ -14,16 +14,11 @@ import type {
   ZDocConfig,
   ZDocConfigOnDisk,
   ZDocInput,
-  ZDocInputOptionSelect,
   MenuValue,
   InputType,
   HelpPageData,
   ToC,
 } from './types';
-
-const DEFAULT_VARIANT = '__default__';
-const MIRROR_BLOCK = 'MirrorBlock';
-const MIRROR_VARIANT = 'MirrorVariant';
 
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
@@ -104,7 +99,7 @@ async function loadBlock(
   return result.content;
 }
 
-function transpileInput(name: string, input: ZDocInput): InputType {
+export function transpileInput(name: string, input: ZDocInput): InputType {
   if ('option' in input) {
     const items: [string, MenuValue][] = [];
     const defaultVal = input.default;
@@ -151,7 +146,7 @@ function transpileInput(name: string, input: ZDocInput): InputType {
   };
 }
 
-function createInitialState(menus: InputType[]): MenuValue {
+export function createInitialState(menus: InputType[]): MenuValue {
   return menus.reduce<MenuValue>((acc, menu) => {
     let value: MenuValue;
     if ('items' in menu) {
@@ -204,7 +199,6 @@ function parseContentBlocks(content: string): {
     /```{ztmpl([^}]*)}\n([\s\S]*?)```/g,
     (_match, attrs: string, template: string) => {
       const langMatch = attrs.match(/lang="([^"]+)"/);
-      const inputMatch = attrs.match(/input="([^"]+)"/);
       const pathMatch = attrs.match(/path="([^"]+)"/);
 
       const id = `codeblock-${blockCounter++}`;

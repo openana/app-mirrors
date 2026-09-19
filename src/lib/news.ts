@@ -56,10 +56,11 @@ for (const [filePath, raw] of Object.entries(newsModules)) {
   if (!slugMatch) continue;
 
   const dirName = slugMatch[1] || '';
+  const fileName = slugMatch[2] || '';
   const { title, date, summary, body } = parseFrontmatter(raw);
 
   allPosts.push({
-    slug: dirName,
+    slug: `${dirName}-${fileName}`,
     title,
     date,
     summary,

@@ -16,4 +16,16 @@ export default defineConfig({
       },
     },
   },
+  server: {
+    proxy: {
+      '/api/mirrors.json': {
+        target: 'https://mirrors.xjtu.edu.cn',
+        changeOrigin: true,
+      },
+      '/api/downloads.json': {
+        target: 'https://mirrors.xjtu.edu.cn',
+        changeOrigin: true,
+      },
+    },
+  },
 });

@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route } from 'react-router';
+import { HashRouter, Routes, Route } from 'react-router';
 import { I18nProvider } from '@/i18n';
 import Layout from '@/components/Layout';
 import Mirrors from '@/pages/Mirrors';
@@ -23,7 +23,7 @@ import '@/styles/index.scss';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <I18nProvider>
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<About />} />
@@ -38,7 +38,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="*" element={<div>404</div>} />
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
     </I18nProvider>
   </StrictMode>,
 );

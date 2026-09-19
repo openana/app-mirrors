@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
+import { Link } from 'react-router';
 import { useMirrors, useHelpRoutes } from '@/lib/client/mirrors';
 import { groupBy } from '@/lib/client/utils';
 import { Summary } from '@/components/Status';
@@ -38,8 +39,9 @@ function GroupCard({
   const lastUpdateTs = Math.max(0, ...group.entries.map((e) => e.last_update_ts));
   const isGit = group.name.endsWith('.git');
   const href = isGit ? `/git/${group.name}/` : `/${group.name}/`;
-  const helpHref = useMemo(() => {
-    return Object.keys(helpRoutes).find((key) => helpRoutes[key]?.cname === group.name);
+  const helpTo = useMemo(() => {
+    const key = Object.keys(helpRoutes).find((k) => helpRoutes[k]?.cname === group.name);
+    return key ?? null;
   }, [helpRoutes, group.name]);
   return (
     <div className={`group${expanded ? ' group-expanded' : ''}`}>
@@ -49,10 +51,10 @@ function GroupCard({
             {expanded ? 'expand_more' : 'chevron_right'}
           </span>
           <a href={href}>{group.name}</a>
-          {helpHref && (
-            <a href={helpHref} className="help-link" title="Help">
+          {helpTo && (
+            <Link to={helpTo} className="help-link" title="Help">
               <span className="material-icons">help_outline</span>
-            </a>
+            </Link>
           )}
         </h2>
         <Summary statuses={statuses} lastUpdateTs={lastUpdateTs} />

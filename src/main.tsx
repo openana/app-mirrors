@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route } from 'react-router';
 import { I18nProvider } from '@/i18n';
 import Layout from '@/components/Layout';
-import Home from '@/pages/Home';
+import Mirrors from '@/pages/Mirrors';
 import Download from '@/pages/Download';
 import News from '@/pages/News';
 import NewsArticle from '@/pages/NewsArticle';
@@ -27,7 +27,7 @@ createRoot(document.getElementById('root')!).render(
       <Routes>
         <Route element={<Layout />}>
           <Route index element={<About />} />
-          <Route path="mirrors" element={<Home />} />
+          <Route path="mirrors" element={<Mirrors />} />
           <Route path="download" element={<Download />} />
           <Route path="download/:category" element={<Download />} />
           <Route path="download/:category/:distro" element={<Download />} />

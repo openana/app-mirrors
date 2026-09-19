@@ -91,7 +91,7 @@ function GroupCard({
   );
 }
 
-export default function Home() {
+export default function Mirrors() {
   const { data: mirrors, error, isLoading } = useMirrors();
   const { data: helpRoutes } = useHelpRoutes();
   const { t } = useTranslation();

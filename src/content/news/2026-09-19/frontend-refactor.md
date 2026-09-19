@@ -9,4 +9,4 @@ summary: 镜像站前端已完成重构，可能存在部分问题，欢迎通�
 - 资源下载列表
 - 基于 [mirrorz-docs](https://github.com/mirrorz-org/mirrorz-docs) 的帮助文档
 
-如果您在使用过程中遇到任何问题，欢迎通过 [GitHub Issues](https://github.com/mirrors-moe/app-mirrors/issues) 提交反馈。
+如果您在使用过程中遇到任何问题，欢迎通过 [GitHub Issues](https://github.com/openana/app-mirrors/issues) 提交反馈。

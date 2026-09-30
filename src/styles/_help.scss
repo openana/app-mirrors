@@ -381,7 +381,7 @@
 }
 
 .codeblock-filepath {
-  font-family: 'Source Code Pro', monospace;
+  @include monospace;
   flex: 1;
   min-width: 0;
   overflow: hidden;

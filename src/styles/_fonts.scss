@@ -1,12 +1,12 @@
 @mixin sans {
-  font-family: 'Source Sans 3', 'Noto Sans SC', -apple-system,
+  font-family: 'Noto Sans', 'Noto Sans SC', -apple-system,
     BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell',
     'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'PingFang SC',
     'Microsoft YaHei', sans-serif;
 }
 
 @mixin monospace {
-  font-family: 'Source Code Pro', source-code-pro, Menlo, Monaco, Consolas,
+  font-family: 'Noto Sans Mono', 'Noto Sans SC', Menlo, Monaco, Consolas,
     'Courier New', monospace;
 }
 

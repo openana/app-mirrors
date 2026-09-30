@@ -14,11 +14,13 @@ const Sync = lazy(() => import('@/pages/Sync'));
 
 // Local font imports (replaces Google Fonts CDN)
 import '@fontsource/material-icons/index.css';
-import '@fontsource/source-sans-3/400.css';
-import '@fontsource/source-sans-3/700.css';
-import '@fontsource/source-sans-3/400-italic.css';
-import '@fontsource/source-code-pro/400.css';
-import '@fontsource/source-code-pro/700.css';
+import '@fontsource/noto-sans/400.css';
+import '@fontsource/noto-sans/700.css';
+import '@fontsource/noto-sans/400-italic.css';
+import '@fontsource/noto-sans-sc/400.css';
+import '@fontsource/noto-sans-sc/700.css';
+import '@fontsource/noto-sans-mono/400.css';
+import '@fontsource/noto-sans-mono/700.css';
 
 import '@/styles/index.scss';
 

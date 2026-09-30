@@ -28,8 +28,9 @@ This project borrows heavily from the [mirrorz-org](https://github.com/mirrorz-o
 | Package | Version | License |
 |---------|---------|---------|
 | `@fontsource/material-icons` | 5.3.0 | OFL-1.1 |
-| `@fontsource/source-code-pro` | 5.3.0 | OFL-1.1 |
-| `@fontsource/source-sans-3` | 5.3.0 | OFL-1.1 |
+| `@fontsource/noto-sans` | 5.3.0 | OFL-1.1 |
+| `@fontsource/noto-sans-mono` | 5.3.0 | OFL-1.1 |
+| `@fontsource/noto-sans-sc` | 5.3.0 | OFL-1.1 |
 | `github-slugger` | 2.0.0 | ISC |
 | `hogan.js` | 3.0.2 | Apache-2.0 |
 | `markdown-it` | 15.0.2 | MIT |

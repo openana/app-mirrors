@@ -24,6 +24,10 @@ _Avoid_: origin, source
 A string representing a mirror's current sync state. Values from the backend: `success`, `syncing`, `failed`, `pre-syncing`, `paused`, `proxy`, `unknown`. The backend also provides timestamps for last update, last sync start/end, and next scheduled sync.
 _Avoid_: state, health
 
+**Sync Run**:
+One sync attempt of a mirror, bounded by its sync start and end timestamps. The feed keeps only the latest Sync Run (plus the last successful update time); a Sync Run with no end yet is still running.
+_Avoid_: job, run, sync job
+
 **Mirror Entry**:
 The raw mirror object from the backend `mirrors.json`. Contains `name`, `status`, `upstream`, `size`, and timestamp fields. The frontend shows only mirrors present in this feed — no static config overrides.
 _Avoid_: MirrorConfig (the old static config approach)
@@ -34,6 +38,10 @@ _Avoid_: file listing, directory listing
 
 **Status Summary**:
 An aggregated count of status codes across mirrors in a group or site. Displayed as colored badges (e.g., "3 success, 1 syncing").
+
+**Age**:
+The elapsed time since a mirror's last update. A large value means old content regardless of the mirror's Status.
+_Avoid_: staleness, freshness
 
 **Help Doc**:
 Per-mirror usage documentation stored in `mirrorz-docs` as YAML config + MDX content. Each doc has a title, ordered content blocks, and optional input variables for interactive code examples.

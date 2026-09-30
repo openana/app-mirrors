@@ -1,6 +1,7 @@
 {
   "nav": {
     "mirrors": "镜像列表",
+    "sync": "同步",
     "downloads": "下载",
     "news": "新闻",
     "help": "帮助",
@@ -25,6 +26,24 @@
     "lastStarted": "最近开始：",
     "lastEnded": "最近结束：",
     "nextSchedule": "下次计划："
+  },
+  "sync": {
+    "title": "同步",
+    "subtitle": "镜像同步状态",
+    "timelineTitle": "同步时间线",
+    "ageTitle": "年龄",
+    "now": "现在",
+    "duration": "耗时：",
+    "running": "已运行 {x}",
+    "overdue": "已逾期 {x}",
+    "unscheduled": "未计划",
+    "ageValue": "距上次更新已 {x}",
+    "legendRun": "同步运行",
+    "legendUpdate": "上次更新",
+    "legendNext": "下次计划",
+    "legendNow": "当前时间",
+    "loading": "加载中...",
+    "error": "加载同步状态失败"
   },
   "download": {
     "title": "下载浏览",

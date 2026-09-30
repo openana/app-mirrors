@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { Suspense, lazy, StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { HashRouter, Routes, Route } from 'react-router';
 import { I18nProvider } from '@/i18n';
@@ -9,6 +9,8 @@ import News from '@/pages/News';
 import NewsArticle from '@/pages/NewsArticle';
 import About from '@/pages/About';
 import Help from '@/pages/Help';
+
+const Sync = lazy(() => import('@/pages/Sync'));
 
 // Local font imports (replaces Google Fonts CDN)
 import '@fontsource/material-icons/index.css';
@@ -28,6 +30,22 @@ createRoot(document.getElementById('root')!).render(
         <Route element={<Layout />}>
           <Route index element={<About />} />
           <Route path="mirrors" element={<Mirrors />} />
+          <Route
+            path="sync"
+            element={
+              <Suspense fallback={null}>
+                <Sync />
+              </Suspense>
+            }
+          />
+          <Route
+            path="sync/:tab"
+            element={
+              <Suspense fallback={null}>
+                <Sync />
+              </Suspense>
+            }
+          />
           <Route path="download" element={<Download />} />
           <Route path="download/:category" element={<Download />} />
           <Route path="download/:category/:distro" element={<Download />} />

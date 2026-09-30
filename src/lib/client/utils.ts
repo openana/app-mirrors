@@ -46,3 +46,14 @@ export function absoluteTime(timestamp: number): string {
   const pad = (n: number) => n.toString().padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+
+/** RFC 3339 timestamp in the browser's local timezone, e.g. 2026-09-18T20:47:46+08:00. */
+export function formatRFC3339(ts: number): string {
+  if (ts <= 0) return '-';
+  const d = new Date(ts * 1000);
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const offset = d.getTimezoneOffset();
+  const sign = offset <= 0 ? '+' : '-';
+  const absOffset = Math.abs(offset);
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
+}

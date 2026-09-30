@@ -12,6 +12,7 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { labelKey: 'nav.mirrors', href: '/mirrors/', icon: 'list_alt' },
+  { labelKey: 'nav.sync', href: '/sync/', icon: 'sync' },
   { labelKey: 'nav.downloads', href: '/download/', icon: 'get_app' },
   { labelKey: 'nav.news', href: '/news/', icon: 'newspaper' },
   { labelKey: 'nav.help', href: '/help/', icon: 'help_outline' },

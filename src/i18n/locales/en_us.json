@@ -1,6 +1,7 @@
 {
   "nav": {
     "mirrors": "Mirrors",
+    "sync": "Sync",
     "downloads": "Downloads",
     "news": "News",
     "help": "Help",
@@ -25,6 +26,24 @@
     "lastStarted": "Last started:",
     "lastEnded": "Last ended:",
     "nextSchedule": "Next schedule:"
+  },
+  "sync": {
+    "title": "Sync",
+    "subtitle": "Mirror sync status",
+    "timelineTitle": "Sync timeline",
+    "ageTitle": "Age",
+    "now": "now",
+    "duration": "Duration:",
+    "running": "running for {x}",
+    "overdue": "overdue by {x}",
+    "unscheduled": "unscheduled",
+    "ageValue": "{x} since last update",
+    "legendRun": "Sync run",
+    "legendUpdate": "Last update",
+    "legendNext": "Next schedule",
+    "legendNow": "Now",
+    "loading": "Loading...",
+    "error": "Failed to load sync status"
   },
   "download": {
     "title": "Download Browser",

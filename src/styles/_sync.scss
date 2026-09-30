@@ -1,0 +1,85 @@
+@use 'consts' as *;
+@use 'fonts' as *;
+
+/* Sync page: the downloads page layout (page-head + category-tabs live in
+   _download.scss) with one chart per tab. Layout only — every color comes
+   from the tokens. */
+
+.sync {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 100%;
+}
+
+.sync-body {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px 30px 40px;
+}
+
+.chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 12.5px;
+  color: var(--text-muted);
+
+  > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .legend-swatch {
+    display: inline-block;
+    flex: 0 0 auto;
+
+    &.run {
+      width: 18px;
+      height: 8px;
+      border-radius: 2px;
+      background: var(--st-success);
+      opacity: 0.85;
+    }
+
+    &.dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--st-success);
+    }
+
+    &.tick {
+      width: 2px;
+      height: 12px;
+      background: var(--text-faint);
+    }
+
+    &.now {
+      width: 18px;
+      height: 0;
+      border-top: 1px dashed var(--text-muted);
+    }
+  }
+}
+
+.chart-card {
+  padding: 12px 14px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+
+  .chart {
+    width: 100%;
+    min-height: 40px;
+  }
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
+  .sync-body {
+    padding: 12px 14px 30px;
+    gap: 12px;
+  }
+}

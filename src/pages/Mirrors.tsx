@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { useMirrors, useHelpRoutes } from '@/lib/client/mirrors';
-import { groupBy } from '@/lib/client/utils';
+import { formatRFC3339, groupBy } from '@/lib/client/utils';
 import { Summary } from '@/components/Status';
 import { useTranslation } from '@/i18n';
 import type { MirrorEntry } from '@/lib/client/types';
@@ -12,16 +12,6 @@ interface MirrorGroup {
 }
 
 type HelpRoutes = Record<string, { title: string; cname: string }>;
-
-function formatRFC3339(ts: number): string {
-  if (ts <= 0) return '-';
-  const d = new Date(ts * 1000);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const offset = d.getTimezoneOffset();
-  const sign = offset <= 0 ? '+' : '-';
-  const absOffset = Math.abs(offset);
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}${sign}${pad(Math.floor(absOffset / 60))}:${pad(absOffset % 60)}`;
-}
 
 function GroupCard({
   group,

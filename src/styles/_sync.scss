@@ -71,8 +71,14 @@
   border-radius: var(--radius);
   background: var(--bg);
 
+  /* Charts keep a usable minimum width and overflow horizontally on
+     narrow screens instead of squishing (grid labels + a 36 h axis do
+     not compress below ~720 px). */
+  overflow-x: auto;
+
   .chart {
     width: 100%;
+    min-width: 720px;
     min-height: 40px;
   }
 }

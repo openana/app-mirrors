@@ -84,6 +84,8 @@ backend `mirrors.json` feed (see `reference/mirrors.json`). Two charts. Grilled 
   `sortRowsByAge`, i18n `ageTitle`/`ageValue`, CONTEXT.md term **Age**); time-axis day
   boundaries render as `MM-DD` (e.g. `09-30`, `10-01`) instead of echarts' `30`/`Oct` —
   asserted in the smoke test.
+- Charts overflow horizontally below 720 px instead of squishing (`.chart-card` scrolls,
+  `.chart { min-width: 720px }`) — mobile keeps the full 36 h axis and label column.
 
 - **Full-height charts, no dataZoom**: both charts render all rows (~1450 px each) and
   the page scrolls, instead of the planned 640 px grid + nested row-scrolling. Nested

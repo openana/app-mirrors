@@ -1,4 +1,4 @@
-import { useParams } from 'react-router';
+import { Link, useLocation, useParams } from 'react-router';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CodeBlock from '@/components/help/CodeBlock';
 import HelpNav from '@/components/help/HelpNav';
@@ -50,6 +50,24 @@ function splitContentAtCodeblocks(html: string) {
   }
 
   return parts;
+}
+
+/**
+ * HashRouter keeps the route in the URL fragment, so a bare "#anchor" href
+ * replaces the whole hash route and drops the user back to the root page.
+ * In-page anchors must therefore carry the route path:
+ * "#anchor" → "#/help/debian#anchor".
+ */
+function anchorHref(pathname: string, anchor: string) {
+  return `#${pathname}#${anchor.replace(/^#/, '')}`;
+}
+
+/** Rewrites in-page anchors in rendered HTML so they survive HashRouter. */
+function rewriteAnchorLinks(html: string, pathname: string) {
+  return html.replace(
+    /href="#([^"]*)"/g,
+    (_m, anchor: string) => `href="${anchorHref(pathname, anchor)}"`,
+  );
 }
 
 function HelpSettingsBar() {
@@ -116,6 +134,7 @@ function HelpContent({
   data: HelpPageData;
 }) {
   const { selectedSite, sudoEnabled, httpsEnabled } = useHelpSettings();
+  const { pathname } = useLocation();
 
   const codeBlockMap = useMemo(() => {
     const map = new Map<string, (typeof data.codeBlocks)[0]>();
@@ -126,8 +145,8 @@ function HelpContent({
   }, [data.codeBlocks]);
 
   const segments = useMemo(
-    () => splitContentAtCodeblocks(data.content),
-    [data.content],
+    () => splitContentAtCodeblocks(rewriteAnchorLinks(data.content, pathname)),
+    [data.content, pathname],
   );
 
   return (
@@ -164,6 +183,7 @@ function HelpContent({
 
 function HelpPage() {
   const { '*': splat } = useParams();
+  const location = useLocation();
   const { t } = useTranslation();
   const [data, setData] = useState<HelpPageData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -197,6 +217,16 @@ function HelpPage() {
         setLoading(false);
       });
   }, [splat]);
+
+  // The browser cannot resolve in-page anchors nested inside the HashRouter
+  // fragment, so scroll to the target ourselves.
+  useEffect(() => {
+    const id = decodeURIComponent(location.hash.replace(/^#/, ''));
+    if (!id || !data) return;
+    document
+      .getElementById(id)
+      ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, [location, data]);
 
   const content = (() => {
     if (!splat) {
@@ -234,13 +264,13 @@ function HelpPage() {
       </div>
       <nav className="help-toc-list">
         {data.toc.map((heading, i) => (
-          <a
+          <Link
             key={`${heading.url}-${i}`}
-            href={heading.url}
+            to={{ pathname: location.pathname, hash: heading.url }}
             className={`help-toc-item${heading.depth === 3 ? ' deep' : ''}`}
           >
             {heading.content}
-          </a>
+          </Link>
         ))}
       </nav>
     </aside>

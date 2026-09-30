@@ -12,6 +12,15 @@ See [`zdoc/LICENSE-CC`](./zdoc/LICENSE-CC) for the full license text.
 
 ---
 
+## Attribution
+
+This project borrows heavily from the [mirrorz-org](https://github.com/mirrorz-org) projects:
+
+- **Design system**: The project's design system is taken from [mirrorz-org/mirrorz](https://github.com/mirrorz-org/mirrorz).
+- **zdoc parser**: The zdoc parser is a clone of the one in [mirrorz-org/mirrorz-help](https://github.com/mirrorz-org/mirrorz-help).
+
+---
+
 ## Dependencies
 
 ### Production Dependencies

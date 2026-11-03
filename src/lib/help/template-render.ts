@@ -16,9 +16,9 @@ import type { InputType, MenuValue } from './types';
 
 /** Page settings the built-in Template variables are derived from. */
 export interface TemplateRenderSettings {
-  /** Mirror host name, e.g. "mirrors.xjtu.edu.cn" (config `endpoint` field). */
+  /** Mirror host name, e.g. "mirrors.xjtu.edu.cn" (config `host` field). */
   host?: string;
-  /** Page slug (cname), e.g. "debian" — appended to the endpoint. */
+  /** Page slug (cname), e.g. "debian" — appended to the host in the Mirror Endpoint URL. */
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;

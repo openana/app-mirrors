@@ -236,6 +236,106 @@ describe('help pipeline page-data builder', () => {
     });
   });
 
+  describe('Global Input forms', () => {
+    it('extracts a global="true" Template into globalForms and leaves a <globalmenu> placeholder', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  target:',
+          '    _: 目标',
+          '    option:',
+          '      cpu:',
+          '      cu128:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: [
+          '选择目标：',
+          '',
+          '```{ztmpl global="true" input="target"}',
+          'ignored body',
+          '```',
+        ].join('\n'),
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.globalForms).toEqual([
+        {
+          id: 'globalmenu-0',
+          menus: [
+            {
+              title: '目标',
+              items: [
+                ['cpu', { target: 'cpu' }],
+                ['cu128', { target: 'cu128' }],
+              ],
+            },
+          ],
+        },
+      ]);
+      expect(data!.content).toContain('<globalmenu id="globalmenu-0" />');
+      expect(data!.content).not.toContain('ignored body');
+      expect(data!.codeBlocks).toEqual([]);
+      expect(data!.compiledTemplates).toEqual({});
+    });
+
+    it('numbers global forms continuously across the page blocks, separate from code blocks', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'block:',
+          '- intro',
+          '- usage',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    option:',
+          '      stable:',
+          '  version:',
+          '    _: 版本',
+          '    option:',
+          '      v1:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'intro.zh.md')]: [
+          '```{ztmpl global="true" input="release"}',
+          '```',
+          '',
+          '```{ztmpl lang="bash"}',
+          'echo {{release}}',
+          '```',
+        ].join('\n'),
+        [baseFile('demo', 'usage.zh.md')]: '```{ztmpl global="true" input="version"}\n```',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.globalForms.map((f) => f.id)).toEqual(['globalmenu-0', 'globalmenu-1']);
+      expect(data!.codeBlocks.map((b) => b.id)).toEqual(['codeblock-0']);
+      expect(data!.content).toContain('<globalmenu id="globalmenu-0" />');
+      expect(data!.content).toContain('<codeblock id="codeblock-0" />');
+      expect(data!.content).toContain('<globalmenu id="globalmenu-1" />');
+    });
+
+    it('still parses a global="true" Template without input (located error lands in ticket 07)', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: [
+          '```{ztmpl global="true"}',
+          'ignored body',
+          '```',
+        ].join('\n'),
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.globalForms).toEqual([{ id: 'globalmenu-0', menus: [] }]);
+      expect(data!.content).toContain('<globalmenu id="globalmenu-0" />');
+      expect(data!.codeBlocks).toEqual([]);
+    });
+  });
+
   describe('Site Overrides', () => {
     it('merges Site Overrides over Base Docs config and block files', async () => {
       const root = await makeDocsTree({
@@ -357,19 +457,6 @@ describe('help pipeline page-data builder', () => {
   });
 
   describe('known gaps (characterization; fixed in later tickets)', () => {
-    it('treats global="true" fences as ordinary code blocks (ticket 05)', async () => {
-      const root = await makeDocsTree({
-        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\ninput:\n  release:\n    _: 发行版\n    option:\n      stable:\n',
-        [baseFile('demo', 'index.zh.md')]: '```{ztmpl global="true" input="release"}\n```',
-      });
-
-      const data = await getContentBySegments(root, ['demo'], 'zh');
-
-      expect(data!.codeBlocks).toHaveLength(1);
-      expect(data!.compiledTemplates['codeblock-0']).toBe('');
-      expect(data!.content).toContain('<codeblock id="codeblock-0" />');
-    });
-
     it('keeps inline {ztmpl} markers and their code spans literal (ticket 06)', async () => {
       const root = await makeDocsTree({
         [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',

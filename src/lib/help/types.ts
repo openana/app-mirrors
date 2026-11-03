@@ -4,6 +4,11 @@ export interface ToC {
   depth: number;
 }
 
+export interface GlobalForm {
+  id: string;
+  menus: InputType[];
+}
+
 export interface HelpPageData {
   toc: ToC[];
   content: string;
@@ -19,6 +24,8 @@ export interface HelpPageData {
     filepath?: string;
     append?: boolean;
   }>;
+  /** Global Input forms (ADR 0007), placed via `<globalmenu id>` in content. */
+  globalForms: GlobalForm[];
 }
 
 export interface ZDocConfigOnDisk {

@@ -16,6 +16,7 @@ import type {
   MenuValue,
   InputType,
   HelpPageData,
+  GlobalForm,
   ToC,
 } from './types';
 import { createZdocParser, type ExtractedCodeBlock } from './markdown-it-plugins';
@@ -160,28 +161,32 @@ function parseContentBlock(
   content: string,
   blockPath: string | null,
   inputDefs: Record<string, ZDocInput>,
-  _globalBlockCounter: { value: number },
+  counters: { codeBlocks: number; globalForms: number },
   pageId: string,
 ): {
   html: string;
   codeBlocks: ExtractedCodeBlock[];
+  globalForms: GlobalForm[];
   headings: ToC[];
 } {
   const { md, result } = createZdocParser(
     inputDefs,
     pageId,
     blockPath,
-    _globalBlockCounter.value,
+    counters.codeBlocks,
+    counters.globalForms,
   );
 
   const html = md.render(content);
 
-  // Advance the global counter to stay in sync.
-  _globalBlockCounter.value += result.codeBlocks.length;
+  // Advance the page-global counters to keep ids stable across blocks.
+  counters.codeBlocks += result.codeBlocks.length;
+  counters.globalForms += result.globalForms.length;
 
   return {
     html,
     codeBlocks: result.codeBlocks,
+    globalForms: result.globalForms,
     headings: result.toc,
   };
 }
@@ -204,23 +209,25 @@ export async function getContentBySegments(
   const blockNames = conf.block || ['index'];
   const blocks: string[] = [];
   const allCodeBlocks: ExtractedCodeBlock[] = [];
+  const allGlobalForms: GlobalForm[] = [];
   const allHeadings: ToC[] = [];
-  const globalBlockCounter = { value: 0 };
+  const counters = { codeBlocks: 0, globalForms: 0 };
 
   for (const blockName of blockNames) {
     const content = await loadBlock(docsDir, id, blockName, language);
     if (!content) continue;
 
     const blockPath = path.join(docsDir, id, `${blockName}.${language}.md`);
-    const { html, codeBlocks, headings } = parseContentBlock(
+    const { html, codeBlocks, globalForms, headings } = parseContentBlock(
       content,
       blockPath,
       conf.input,
-      globalBlockCounter,
+      counters,
       id,
     );
     blocks.push(html);
     allCodeBlocks.push(...codeBlocks);
+    allGlobalForms.push(...globalForms);
     allHeadings.push(...headings);
   }
 
@@ -247,6 +254,7 @@ export async function getContentBySegments(
       filepath,
       append,
     })),
+    globalForms: allGlobalForms,
   };
 }
 

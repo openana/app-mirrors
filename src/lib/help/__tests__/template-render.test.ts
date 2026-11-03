@@ -7,7 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import type { InputType, Menu, MenuValue } from '../types';
-import { createInitialState, renderTemplate } from '../template-render';
+import { createInitialState, renderTemplate, type TemplateSelection } from '../template-render';
 
 const settings = {
   host: 'mirrors.example.edu.cn',
@@ -17,8 +17,8 @@ const settings = {
 };
 
 /** The selection store after picking one option of a select menu. */
-function selectOption(menu: Menu, index: number): MenuValue {
-  return { ...menu.items[index]![1] };
+function selectOption(menu: Menu, index: number): TemplateSelection {
+  return { block: { ...menu.items[index]![1] } };
 }
 
 const releaseMenu: Menu = {
@@ -89,8 +89,46 @@ describe('template render seam', () => {
         http_protocol: 'ftp://',
       };
       expect(
-        renderTemplate('{{scheme}}|{{host}}|{{path}}|{{endpoint}}|{{sudo}}', selection, settings),
+        renderTemplate('{{scheme}}|{{host}}|{{path}}|{{endpoint}}|{{sudo}}', { block: selection }, settings),
       ).toBe('https|mirrors.example.edu.cn||https://mirrors.example.edu.cn/demo|sudo ');
+    });
+  });
+
+  describe('Global Inputs (ADR 0007)', () => {
+    it('supplies Template Variables to templates whose block declares no input', () => {
+      expect(
+        renderTemplate(
+          'uv add flash-attn --index astral-{{target}}={{endpoint}}/{{target}}/',
+          { globals: { 'globalmenu-0': { target: 'cu128' } } },
+          settings,
+        ),
+      ).toBe(
+        'uv add flash-attn --index astral-cu128=https://mirrors.example.edu.cn/demo/cu128/',
+      );
+    });
+
+    it('merges the selections of every Global Input form on the page', () => {
+      const selection: TemplateSelection = {
+        globals: {
+          'globalmenu-0': { release: 'trixie', os: 'debian' },
+          'globalmenu-1': { 'erlang-version': '27' },
+        },
+      };
+      expect(
+        renderTemplate('{{os}} {{release}} {{erlang-version}}', selection, settings),
+      ).toBe('debian trixie 27');
+    });
+
+    it('resolves precedence: block inputs < Global Inputs < built-ins', () => {
+      const selection: TemplateSelection = {
+        block: { release: 'block-only', shared: 'from-block' },
+        globals: {
+          'globalmenu-0': { shared: 'from-global', scheme: 'ftp', host: 'evil.example' },
+        },
+      };
+      expect(
+        renderTemplate('{{release}}|{{shared}}|{{scheme}}|{{host}}', selection, settings),
+      ).toBe('block-only|from-global|https|mirrors.example.edu.cn');
     });
   });
 
@@ -131,28 +169,28 @@ describe('template render seam', () => {
 
     it('injects switch values as line prefixes', () => {
       const template = '{{src}}deb-src {{endpoint}}/';
-      expect(renderTemplate(template, { src: '# ' }, settings)).toBe(
+      expect(renderTemplate(template, { block: { src: '# ' } }, settings)).toBe(
         '# deb-src https://mirrors.example.edu.cn/demo/',
       );
-      expect(renderTemplate(template, { src: '' }, settings)).toBe(
+      expect(renderTemplate(template, { block: { src: '' } }, settings)).toBe(
         'deb-src https://mirrors.example.edu.cn/demo/',
       );
     });
 
     it('renders mustache sections for boolean switches', () => {
       const template = '{{#official}}x{{/official}}';
-      expect(renderTemplate(template, { official: true }, settings)).toBe('x');
-      expect(renderTemplate(template, { official: false }, settings)).toBe('');
+      expect(renderTemplate(template, { block: { official: true } }, settings)).toBe('x');
+      expect(renderTemplate(template, { block: { official: false } }, settings)).toBe('');
     });
 
     it('renders text input values', () => {
-      expect(renderTemplate('note={{note}}', { note: 'abc' }, settings)).toBe('note=abc');
+      expect(renderTemplate('note={{note}}', { block: { note: 'abc' } }, settings)).toBe('note=abc');
     });
   });
 
   describe('rendering contract', () => {
     it('HTML-escapes interpolated values (the rendered code is shown as HTML)', () => {
-      expect(renderTemplate('{{x}}', { x: 'a<b&c' }, settings)).toBe('a&lt;b&amp;c');
+      expect(renderTemplate('{{x}}', { block: { x: 'a<b&c' } }, settings)).toBe('a&lt;b&amp;c');
     });
 
     it('leaves single braces and shell syntax verbatim', () => {

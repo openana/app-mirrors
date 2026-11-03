@@ -150,20 +150,6 @@ export function transpileInput(name: string, input: ZDocInput): InputType {
   };
 }
 
-export function createInitialState(menus: InputType[]): MenuValue {
-  return menus.reduce<MenuValue>((acc, menu) => {
-    let value: MenuValue;
-    if ('items' in menu) {
-      value = menu.items[0]?.[1] || {};
-    } else if ('trueValue' in menu) {
-      value = { [menu.name]: menu.defaultValue ? menu.trueValue : menu.falseValue };
-    } else {
-      value = { [menu.name]: menu.defaultValue || '' };
-    }
-    return { ...acc, ...value };
-  }, {});
-}
-
 // ── Markdown parsing (markdown-it based) ────────────────────
 
 /**

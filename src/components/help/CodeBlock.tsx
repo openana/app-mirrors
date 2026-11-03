@@ -1,5 +1,4 @@
 import { useState, useMemo, useCallback } from 'react';
-import Hogan from 'hogan.js';
 import Prism from 'prismjs';
 import 'prismjs/components/prism-bash';
 import 'prismjs/components/prism-ini';
@@ -9,6 +8,7 @@ import 'prismjs/components/prism-nginx';
 import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-yaml';
 import type { InputType, MenuValue } from '@/lib/help/types';
+import { createInitialState, renderTemplate } from '@/lib/help/template-render';
 
 interface CodeBlockProps {
   templateId: string;
@@ -22,20 +22,6 @@ interface CodeBlockProps {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
-}
-
-function createInitialState(menus: InputType[]): MenuValue {
-  return menus.reduce<MenuValue>((acc, menu) => {
-    let value: MenuValue;
-    if ('items' in menu) {
-      value = menu.items[0]?.[1] || {};
-    } else if ('trueValue' in menu) {
-      value = { [menu.name]: menu.defaultValue ? menu.trueValue : menu.falseValue };
-    } else {
-      value = { [menu.name]: menu.defaultValue || '' };
-    }
-    return { ...acc, ...value };
-  }, {});
 }
 
 function CodeBlockMenu({
@@ -167,31 +153,16 @@ export default function CodeBlock({
   );
   const [copied, setCopied] = useState(false);
 
-  const renderedCode = useMemo(() => {
-    const rawTemplate = compiledTemplates[templateId];
-    if (!rawTemplate) return '(template not found)';
-
-    try {
-      const template = Hogan.compile(rawTemplate);
-      const scheme = httpsEnabled ? 'https' : 'http';
-      const endpoint = mirrorUrl
-        ? `${scheme}://${mirrorUrl}${cname ? `/${cname}` : ''}`
-        : '(no mirror selected)';
-      const vars: MenuValue = {
-        ...menuState,
-        endpoint,
-        host: mirrorUrl || '(no mirror selected)',
-        path: '',
-        sudo: sudoEnabled ? 'sudo ' : '',
-        sudoE: sudoEnabled ? 'sudo -E ' : '',
-        http_protocol: httpsEnabled ? 'https://' : 'http://',
-        scheme,
-      };
-      return template.render(vars);
-    } catch {
-      return rawTemplate;
-    }
-  }, [templateId, compiledTemplates, menuState, mirrorUrl, sudoEnabled, httpsEnabled]);
+  const renderedCode = useMemo(
+    () =>
+      renderTemplate(compiledTemplates[templateId], menuState, {
+        host: mirrorUrl,
+        cname,
+        sudoEnabled,
+        httpsEnabled,
+      }),
+    [templateId, compiledTemplates, menuState, mirrorUrl, cname, sudoEnabled, httpsEnabled],
+  );
 
   const highlightedCode = useMemo(() => {
     if (!lang || !renderedCode) return null;

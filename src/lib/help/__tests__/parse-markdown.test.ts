@@ -265,18 +265,77 @@ describe('help pipeline page-data builder', () => {
       expect(message).toContain('Input "x" used in directive');
     });
 
-    it('resolves a page that exists only as a Site Override', async () => {
+    it('shadows a Base Docs Content Block wholesale while keeping the other blocks', async () => {
       const root = await makeDocsTree({
-        [localFile('siteonly', 'zh.yaml')]: '_: 仅本地页面\n',
-        [localFile('siteonly', 'index.zh.md')]: '本地正文。',
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\nblock:\n- intro\n- usage\n',
+        [baseFile('demo', 'intro.zh.md')]: '基础前言。',
+        [baseFile('demo', 'usage.zh.md')]: '基础用法。',
+        [localFile('demo', 'usage.zh.md')]: '覆盖用法。',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.content).toContain('基础前言。');
+      expect(data!.content).toContain('覆盖用法。');
+      expect(data!.content).not.toContain('基础用法。');
+    });
+
+    it('extends a Base Docs page with an extra Site Override block', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: '基础正文。',
+        [localFile('demo', 'zh.yaml')]: 'block:\n- index\n- faq\n',
+        [localFile('demo', 'faq.zh.md')]: '本站常见问题。',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.content).toContain('基础正文。');
+      expect(data!.content).toContain('本站常见问题。');
+    });
+
+    it('renders a page that exists only as a Site Override end to end', async () => {
+      const root = await makeDocsTree({
+        [localFile('siteonly', 'zh.yaml')]: [
+          '_: 仅本地页面',
+          'block:',
+          '- index',
+          '- faq',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    option:',
+          '      stable:',
+          '        _: 稳定版',
+          '',
+        ].join('\n'),
+        [localFile('siteonly', 'index.zh.md')]: [
+          '本地正文。',
+          '',
+          '```{ztmpl lang="bash" input="release"}',
+          'install {{release}}',
+          '```',
+        ].join('\n'),
+        [localFile('siteonly', 'faq.zh.md')]: '本站常见问题。',
       });
 
       const data = await getContentBySegments(root, ['siteonly'], 'zh');
 
       expect(data!.meta).toEqual({ title: '仅本地页面', cname: 'siteonly' });
       expect(data!.content).toContain('本地正文。');
-      // Known gap (spec ticket 03): page enumeration only sees top-level dirs.
-      expect(await getAvailableSegments(root)).toEqual([]);
+      expect(data!.content).toContain('本站常见问题。');
+      expect(data!.content).toContain('<codeblock id="codeblock-0" />');
+      expect(data!.codeBlocks).toEqual([
+        {
+          id: 'codeblock-0',
+          lang: 'bash',
+          filepath: undefined,
+          append: undefined,
+          menus: [{ title: '发行版', items: [['稳定版', { release: 'stable' }]] }],
+        },
+      ]);
+      expect(data!.compiledTemplates).toEqual({ 'codeblock-0': 'install {{release}}' });
+      expect(await getAvailableSegments(root)).toEqual([['siteonly']]);
     });
   });
 
@@ -339,20 +398,22 @@ describe('help pipeline page-data builder', () => {
   });
 
   describe('page enumeration', () => {
-    it('lists page directories and skips reserved and hidden directories', async () => {
+    it('lists the union of Base Docs and Site Override pages without duplicates', async () => {
       const root = await makeDocsTree({
         [baseFile('alpha', 'zh.yaml')]: '_: Alpha\n',
         [baseFile('beta', 'zh.yaml')]: '_: Beta\n',
+        [localFile('alpha', 'zh.yaml')]: '_: Alpha 覆盖\n',
         [localFile('siteonly', 'zh.yaml')]: '_: 仅本地\n',
+        'global/.hidden/keep.txt': '',
+        'local/.hidden/keep.txt': '',
+        'global/README.md': '',
         'site/keep.txt': '',
-        'global/keep.txt': '',
-        '.hidden/keep.txt': '',
         'README.md': '',
       });
 
       const segments = await getAvailableSegments(root);
 
-      expect(segments.flat().sort()).toEqual(['alpha', 'beta']);
+      expect(segments).toEqual([['alpha'], ['beta'], ['siteonly']]);
     });
   });
 

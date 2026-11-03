@@ -1,9 +1,9 @@
 /**
  * Fixture-tree harness for the help pipeline tests (spec "Testing Decisions", seam 1).
  *
- * Fixture paths mirror today's on-disk docs layout: Base Docs pages are direct
- * children of the root, Site Overrides live under <root>/local/<page>. When the
- * storage layout moves (spec ticket 03), change baseFile/localFile here only —
+ * Fixture paths mirror the on-disk docs layout: Base Docs pages live under
+ * <root>/global/<page> (the mirrorz-docs submodule), Site Overrides under
+ * <root>/local/<page>. Layout changes belong in baseFile/localFile here only —
  * the tests themselves stay untouched.
  */
 
@@ -13,7 +13,7 @@ import path from 'node:path';
 
 /** Path of a Base Docs file inside a fixture tree. */
 export function baseFile(page: string, file: string): string {
-  return path.join(page, file);
+  return path.join('global', page, file);
 }
 
 /** Path of a Site Override file inside a fixture tree. */

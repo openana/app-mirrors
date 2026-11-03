@@ -4,11 +4,11 @@
 
 This project is licensed under the **Apache License 2.0**. See [LICENSE](./LICENSE) for details.
 
-### Exception: `zdoc/` Submodule
+### Exception: `zdoc/global/` Submodule
 
-The `zdoc/` directory is a git submodule from [mirrorz-docs](https://github.com/mirrorz-org/mirrorz-docs) and is licensed under **CC-BY-NC-SA 4.0**.
+The `zdoc/global/` directory is a git submodule from [mirrorz-docs](https://github.com/mirrorz-org/mirrorz-docs) and is licensed under **CC-BY-NC-SA 4.0**.
 
-See [`zdoc/LICENSE-CC`](./zdoc/LICENSE-CC) for the full license text.
+See [`zdoc/global/LICENSE-CC`](./zdoc/global/LICENSE-CC) for the full license text.
 
 ---
 

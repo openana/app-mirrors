@@ -16,9 +16,9 @@ interface CodeBlockProps {
   menus?: InputType[];
   lang?: string;
   filepath?: string;
-  /** Mirror endpoint URL, e.g. "mirrors.tuna.tsinghua.edu.cn" */
-  mirrorUrl?: string;
-  /** Page slug, e.g. "debian" — appended to endpoint */
+  /** Mirror Host (domain name), e.g. "mirrors.xjtu.edu.cn" (glossary: Host) */
+  host?: string;
+  /** Page slug, e.g. "debian" — appended to the host in the Mirror Endpoint URL */
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
@@ -140,7 +140,7 @@ export default function CodeBlock({
   menus = [],
   lang,
   filepath,
-  mirrorUrl,
+  host,
   cname,
   sudoEnabled = false,
   httpsEnabled = true,
@@ -156,12 +156,12 @@ export default function CodeBlock({
   const renderedCode = useMemo(
     () =>
       renderTemplate(compiledTemplates[templateId], menuState, {
-        host: mirrorUrl,
+        host,
         cname,
         sudoEnabled,
         httpsEnabled,
       }),
-    [templateId, compiledTemplates, menuState, mirrorUrl, cname, sudoEnabled, httpsEnabled],
+    [templateId, compiledTemplates, menuState, host, cname, sudoEnabled, httpsEnabled],
   );
 
   const highlightedCode = useMemo(() => {

@@ -170,7 +170,7 @@ function HelpContent({
             menus={cb.menus}
             lang={cb.lang}
             filepath={cb.filepath}
-            mirrorUrl={selectedSite.endpoint}
+            host={selectedSite.host}
             cname={data.meta.cname}
             sudoEnabled={sudoEnabled}
             httpsEnabled={httpsEnabled}

@@ -1,6 +1,7 @@
 import { Link, useLocation, useParams } from 'react-router';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import CodeBlock from '@/components/help/CodeBlock';
+import CodeBlockMenu from '@/components/help/CodeBlockMenu';
 import HelpNav from '@/components/help/HelpNav';
 import {
   HelpSettingsProvider,
@@ -8,32 +9,23 @@ import {
 } from '@/contexts/HelpSettingsContext';
 import { mirrorSites } from '@/config/mirror-sites';
 import { useTranslation } from '@/i18n';
-import type { InputType } from '@/lib/help/types';
+import type { HelpPageData, MenuValue } from '@/lib/help/types';
+import { createInitialState } from '@/lib/help/template-render';
 
-interface HelpPageData {
-  toc: Array<{ url: string; content: string; depth: number }>;
-  content: string;
-  meta: { title: string; cname: string };
-  compiledTemplates: Record<string, string>;
-  codeBlocks: Array<{
-    id: string;
-    menus: InputType[];
-    lang?: string;
-    filepath?: string;
-  }>;
-}
+type ContentSegment =
+  | { type: 'html'; content: string }
+  | { type: 'codeblock'; id: string }
+  | { type: 'globalmenu'; id: string };
 
 /**
- * Splits HTML content at <codeblock id="..." /> tags and returns an array
- * of segments: { type: 'html', content } or { type: 'codeblock', id }.
+ * Splits HTML content at <codeblock id="..." /> and <globalmenu id="..." />
+ * tags and returns an array of segments: { type: 'html', content } or
+ * { type: 'codeblock' | 'globalmenu', id }.
  */
-function splitContentAtCodeblocks(html: string) {
-  const parts: Array<
-    | { type: 'html'; content: string }
-    | { type: 'codeblock'; id: string }
-  > = [];
+function splitContentAtPlaceholders(html: string): ContentSegment[] {
+  const parts: ContentSegment[] = [];
 
-  const regex = /<codeblock\s+id="([^"]+)"\s*\/>/g;
+  const regex = /<(codeblock|globalmenu)\s+id="([^"]+)"\s*\/>/g;
   let lastIndex = 0;
   let match;
 
@@ -41,7 +33,9 @@ function splitContentAtCodeblocks(html: string) {
     if (match.index > lastIndex) {
       parts.push({ type: 'html', content: html.slice(lastIndex, match.index) });
     }
-    if (match[1]) parts.push({ type: 'codeblock', id: match[1] });
+    if (match[2]) {
+      parts.push({ type: match[1] as 'codeblock' | 'globalmenu', id: match[2] });
+    }
     lastIndex = regex.lastIndex;
   }
 
@@ -144,8 +138,28 @@ function HelpContent({
     return map;
   }, [data.codeBlocks]);
 
+  const globalFormMap = useMemo(() => {
+    const map = new Map<string, (typeof data.globalForms)[0]>();
+    for (const form of data.globalForms ?? []) {
+      map.set(form.id, form);
+    }
+    return map;
+  }, [data.globalForms]);
+
+  // One page-level selection store drives every Template on the page
+  // (ADR 0007); initial values come from the forms' defaults.
+  const [globalState, setGlobalState] = useState<Record<string, MenuValue>>(
+    () =>
+      Object.fromEntries(
+        (data.globalForms ?? []).map((form) => [
+          form.id,
+          createInitialState(form.menus),
+        ]),
+      ),
+  );
+
   const segments = useMemo(
-    () => splitContentAtCodeblocks(rewriteAnchorLinks(data.content, pathname)),
+    () => splitContentAtPlaceholders(rewriteAnchorLinks(data.content, pathname)),
     [data.content, pathname],
   );
 
@@ -157,6 +171,22 @@ function HelpContent({
             <div
               key={`html-${i}`}
               dangerouslySetInnerHTML={{ __html: seg.content }}
+            />
+          );
+        }
+        if (seg.type === 'globalmenu') {
+          // A Global Input form renders where its global="true" Template
+          // sits; its body was ignored by the pipeline.
+          const form = globalFormMap.get(seg.id);
+          if (!form) return null;
+          return (
+            <CodeBlockMenu
+              key={seg.id}
+              menus={form.menus}
+              state={globalState[seg.id] ?? {}}
+              onChange={(newState) =>
+                setGlobalState((prev) => ({ ...prev, [seg.id]: newState }))
+              }
             />
           );
         }
@@ -174,6 +204,7 @@ function HelpContent({
             cname={data.meta.cname}
             sudoEnabled={sudoEnabled}
             httpsEnabled={httpsEnabled}
+            globals={globalState}
           />
         );
       })}
@@ -251,7 +282,8 @@ function HelpPage() {
       <HelpSettingsProvider>
         <h1>{data.meta.title}</h1>
         <HelpSettingsBar />
-        <HelpContent data={data} />
+        {/* key: per-page state reset — the selection stores belong to one Help Doc */}
+        <HelpContent key={data.meta.cname} data={data} />
       </HelpSettingsProvider>
     );
   })();

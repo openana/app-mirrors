@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useParams } from 'react-router';
 import { useMirrors } from '@/lib/client/mirrors';
-import { deriveSyncRow, mirrorHref, sortRows, sortRowsByAge } from '@/lib/sync';
+import { mirrorHref } from '@/lib/links';
+import { deriveSyncRow, sortRows, sortRowsByAge } from '@/lib/sync';
 import { readPalette, type ChartPalette } from '@/lib/chart-theme';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useTranslation } from '@/i18n';

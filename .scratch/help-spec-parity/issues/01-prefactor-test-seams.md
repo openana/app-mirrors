@@ -4,10 +4,10 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** ready-for-human
 
-- [ ] `test` script runs Vitest; suite is green
-- [ ] Fixture-tree harness drives the page-data builder; assertions cover content HTML, code blocks, headings and meta
-- [ ] Template rendering extracted to a pure function; the code-block component is a thin caller with unchanged UI
-- [ ] Characterization tests lock current variable resolution at the render seam (built-ins, sudo, select/switch/text inputs, option-derived values)
-- [ ] Characterization only — known spec gaps stay unfixed here (they land in tickets 04–08)
+- [x] `test` script runs Vitest; suite is green
+- [x] Fixture-tree harness drives the page-data builder; assertions cover content HTML, code blocks, headings and meta
+- [x] Template rendering extracted to a pure function; the code-block component is a thin caller with unchanged UI
+- [x] Characterization tests lock current variable resolution at the render seam (built-ins, sudo, select/switch/text inputs, option-derived values)
+- [x] Characterization only — known spec gaps stay unfixed here (they land in tickets 04–08)

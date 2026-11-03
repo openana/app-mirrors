@@ -33,7 +33,7 @@ async function loadFile(
   defaultValue?: string,
 ): Promise<{ path: string | null; content: string }> {
   const localPath = path.join(docsDir, 'local', page, file);
-  const globalPath = path.join(docsDir, page, file);
+  const globalPath = path.join(docsDir, 'global', page, file);
 
   for (const p of [localPath, globalPath]) {
     try {
@@ -54,7 +54,7 @@ async function loadConf(
   language: string,
 ): Promise<ZDocConfig | null> {
   const localPath = path.join(docsDir, 'local', page, `${language}.yaml`);
-  const globalPath = path.join(docsDir, page, `${language}.yaml`);
+  const globalPath = path.join(docsDir, 'global', page, `${language}.yaml`);
 
   const tryReadYaml = async (p: string): Promise<[boolean, ZDocConfigOnDisk | null]> => {
     try {
@@ -96,9 +96,8 @@ async function loadBlock(
   page: string,
   block: string,
   language: string,
-): Promise<string> {
-  const result = await loadFile(docsDir, page, `${block}.${language}.md`, '');
-  return result.content;
+): Promise<{ path: string | null; content: string }> {
+  return loadFile(docsDir, page, `${block}.${language}.md`, '');
 }
 
 // ── Input transpilation ─────────────────────────────────────
@@ -208,10 +207,9 @@ export async function getContentBySegments(
   const globalBlockCounter = { value: 0 };
 
   for (const blockName of blockNames) {
-    const content = await loadBlock(docsDir, id, blockName, language);
+    const { path: blockPath, content } = await loadBlock(docsDir, id, blockName, language);
     if (!content) continue;
 
-    const blockPath = path.join(docsDir, id, `${blockName}.${language}.md`);
     const { html, codeBlocks, headings } = parseContentBlock(
       content,
       blockPath,
@@ -250,15 +248,22 @@ export async function getContentBySegments(
   };
 }
 
+/** Docs subtrees holding pages: Base Docs (submodule) and Site Overrides. */
+const PAGE_TREES = ['global', 'local'];
+
 export async function getAvailableSegments(
   docsDir: string,
 ): Promise<string[][]> {
-  try {
-    const entries = await fs.readdir(docsDir, { withFileTypes: true });
-    return entries
-      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'site' && e.name !== 'local' && e.name !== 'global')
-      .map((e) => [e.name]);
-  } catch {
-    return [];
+  const pages = new Set<string>();
+  for (const tree of PAGE_TREES) {
+    try {
+      const entries = await fs.readdir(path.join(docsDir, tree), { withFileTypes: true });
+      for (const e of entries) {
+        if (e.isDirectory() && !e.name.startsWith('.')) pages.add(e.name);
+      }
+    } catch {
+      // A missing tree simply contributes no pages.
+    }
   }
+  return [...pages].sort().map((name) => [name]);
 }

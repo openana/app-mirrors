@@ -16,6 +16,8 @@ interface CodeBlockProps {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
+  /** Page config `filter.scheme` (spec "Protocol enforcement"): forces the scheme regardless of the toggle. */
+  forcedScheme?: string;
   /** Page-level Global Input selections (ADR 0007). */
   globals?: Record<string, MenuValue>;
 }
@@ -30,6 +32,7 @@ export default function CodeBlock({
   cname,
   sudoEnabled = false,
   httpsEnabled = true,
+  forcedScheme,
   globals,
 }: CodeBlockProps) {
   const [menuState, setMenuState] = useState<MenuValue>(() =>
@@ -47,9 +50,10 @@ export default function CodeBlock({
           cname,
           sudoEnabled,
           httpsEnabled,
+          forcedScheme,
         },
       ),
-    [templateId, compiledTemplates, menuState, globals, host, cname, sudoEnabled, httpsEnabled],
+    [templateId, compiledTemplates, menuState, globals, host, cname, sudoEnabled, httpsEnabled, forcedScheme],
   );
 
   const highlightedCode = useMemo(() => highlightCode(renderedCode, lang), [renderedCode, lang]);

@@ -147,6 +147,45 @@ describe('help pipeline page-data builder', () => {
     });
   });
 
+  describe('filter scheme (spec "Protocol enforcement")', () => {
+    it('carries the config filter into the page meta', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\nfilter:\n  scheme: https\n',
+        [baseFile('demo', 'index.zh.md')]: '正文。',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data).not.toBeNull();
+      expect(data!.meta.filter).toEqual({ scheme: 'https' });
+    });
+
+    it('leaves meta.filter unset on unfiltered pages', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: '正文。',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data).not.toBeNull();
+      expect(data!.meta.filter).toBeUndefined();
+    });
+
+    it('lets a Site Override replace the Base Docs filter (top-level key shadowing)', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\nfilter:\n  scheme: http\n',
+        [baseFile('demo', 'index.zh.md')]: '正文。',
+        [localFile('demo', 'zh.yaml')]: '_: Demo 页面\nfilter:\n  scheme: https\n',
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data).not.toBeNull();
+      expect(data!.meta.filter).toEqual({ scheme: 'https' });
+    });
+  });
+
   describe('input transpilation into menus', () => {
     it('turns an option input into a menu with companion values, default first', async () => {
       const root = await makeDocsTree({

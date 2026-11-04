@@ -20,6 +20,13 @@ export interface TemplateRenderSettings {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
+  /**
+   * The page's config `filter.scheme` (spec "Protocol enforcement"). When
+   * set, it forces `scheme`, `http_protocol` and the Mirror Endpoint URL
+   * regardless of the HTTPS toggle — e.g. an HTTPS-only mirror only serves
+   * https URLs.
+   */
+  forcedScheme?: string;
 }
 
 /**
@@ -68,10 +75,10 @@ export function renderTemplate(
 ): string {
   if (!rawTemplate) return '(template not found)';
 
-  const { host, cname, sudoEnabled = false, httpsEnabled = true } = settings;
+  const { host, cname, sudoEnabled = false, httpsEnabled = true, forcedScheme } = settings;
   try {
     const template = Hogan.compile(rawTemplate);
-    const scheme = httpsEnabled ? 'https' : 'http';
+    const scheme = forcedScheme ?? (httpsEnabled ? 'https' : 'http');
     // One computation (spec "URL variables"): `path` is the project
     // directory /<cname> and the Mirror Endpoint URL is exactly
     // scheme + "://" + host + path — the two can never drift apart.
@@ -91,7 +98,7 @@ export function renderTemplate(
       path,
       sudo: sudoEnabled ? 'sudo ' : '',
       sudoE: sudoEnabled ? 'sudo -E ' : '',
-      http_protocol: httpsEnabled ? 'https://' : 'http://',
+      http_protocol: `${scheme}://`,
       scheme,
     };
     return template.render(vars);

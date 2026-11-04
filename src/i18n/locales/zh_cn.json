@@ -72,7 +72,8 @@
     "selectPage": "请从侧边栏选择一个页面开始阅读。",
     "pageNotFound": "页面未找到：{page}",
     "tocTitle": "本页目录",
-    "domain": "域名"
+    "domain": "域名",
+    "httpsOnlyHint": "此项目仅提供 HTTPS 镜像"
   },
   "time": {
     "justNow": "刚刚",

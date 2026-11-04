@@ -118,7 +118,7 @@ function ContentHtml({
   );
 }
 
-function HelpSettingsBar() {
+function HelpSettingsBar({ forcedScheme }: { forcedScheme?: string }) {
   const {
     selectedSite,
     sudoEnabled,
@@ -167,11 +167,16 @@ function HelpSettingsBar() {
       <label className="help-toggle">
         <input
           type="checkbox"
-          checked={httpsEnabled}
+          checked={forcedScheme ? forcedScheme === 'https' : httpsEnabled}
+          disabled={Boolean(forcedScheme)}
           onChange={useCallback(() => setHttpsEnabled((v) => !v), [setHttpsEnabled])}
         />
         <span>HTTPS</span>
       </label>
+      {/* Spec "Protocol enforcement" (story 14): a filtered page disables the toggle with a hint. */}
+      {forcedScheme && (
+        <span className="help-toggle-hint">{t('help.httpsOnlyHint')}</span>
+      )}
     </div>
   );
 }
@@ -239,6 +244,7 @@ function HelpContent({
               cname={data.meta.cname}
               sudoEnabled={sudoEnabled}
               httpsEnabled={httpsEnabled}
+              forcedScheme={data.meta.filter?.scheme}
               globals={globalState}
             />
           );
@@ -273,6 +279,7 @@ function HelpContent({
             cname={data.meta.cname}
             sudoEnabled={sudoEnabled}
             httpsEnabled={httpsEnabled}
+            forcedScheme={data.meta.filter?.scheme}
             globals={globalState}
           />
         );
@@ -350,7 +357,7 @@ function HelpPage() {
     return (
       <HelpSettingsProvider>
         <h1>{data.meta.title}</h1>
-        <HelpSettingsBar />
+        <HelpSettingsBar forcedScheme={data.meta.filter?.scheme} />
         {/* key: per-page state reset — the selection stores belong to one Help Doc */}
         <HelpContent key={data.meta.cname} data={data} />
       </HelpSettingsProvider>

@@ -309,6 +309,8 @@ export async function getContentBySegments(
     meta: {
       title: conf._,
       cname: id,
+      // Spec "Protocol enforcement": the config filter reaches the page meta.
+      filter: conf.filter ?? undefined,
     },
     compiledTemplates,
     codeBlocks: allCodeBlocks.map(({ id, menus, lang, filepath, append }) => ({

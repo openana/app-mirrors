@@ -35,6 +35,19 @@ export async function makeDocsTree(files: Record<string, string>): Promise<strin
   return root;
 }
 
+/**
+ * Await a pipeline call expected to reject and return the error message,
+ * so negative tests can assert on page, block and line info in it.
+ */
+export async function errorMessageFrom(promise: Promise<unknown>): Promise<string> {
+  try {
+    await promise;
+  } catch (err) {
+    return (err as Error).message;
+  }
+  throw new Error('expected the pipeline to reject');
+}
+
 /** Remove every fixture tree created by makeDocsTree (call from afterAll). */
 export async function removeDocsTrees(): Promise<void> {
   await Promise.all(

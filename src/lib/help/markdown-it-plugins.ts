@@ -39,20 +39,37 @@ interface ZtmplAttrs {
   global?: boolean;
 }
 
-function parseZtmplAttrs(info: string): ZtmplAttrs {
+/** Attributes honoured on fenced Templates (format spec "Template"). */
+const FENCED_ATTRS = ['global', 'lang', 'input', 'path', 'append'];
+/** Attributes honoured on inline Templates — only highlighting (format spec). */
+const INLINE_ATTRS = ['lang'];
+
+/**
+ * Parse the `key="value"` attributes of a Template marker, honouring only
+ * `allowed` keys. Unsupported keys are reported back instead of silently
+ * dropped, so the caller can fail loudly with location info (spec
+ * "Strictness" — nothing in the Template syntax may be ignored).
+ */
+function parseZtmplAttrs(
+  info: string,
+  allowed: readonly string[],
+): { attrs: ZtmplAttrs; unsupported?: string } {
   const attrs: ZtmplAttrs = {};
+  let unsupported: string | undefined;
   const re = /(\w+)="([^"]*)"/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(info)) !== null) {
     const key = m[1]!;
     const val = m[2]!;
-    if (key === 'lang') attrs.lang = val;
+    if (!allowed.includes(key)) {
+      if (unsupported === undefined) unsupported = key;
+    } else if (key === 'lang') attrs.lang = val;
     else if (key === 'path') attrs.path = val;
     else if (key === 'input') attrs.input = val;
     else if (key === 'append') attrs.append = val === 'true';
     else if (key === 'global') attrs.global = val === 'true';
   }
-  return attrs;
+  return { attrs, unsupported };
 }
 
 // ── Input transpilation (ported from reference) ─────────────
@@ -207,11 +224,11 @@ export function createZdocParser(
       if (token.type !== 'fence') continue;
 
       const info = token.info.trim();
+      const line = token.map ? token.map[0] + 1 : '?';
 
       // Check for unsupported directives: {something ...} that isn't {ztmpl}
       const unsupportedMatch = info.match(/^\{(\w[\w-]*)/);
       if (unsupportedMatch && unsupportedMatch[1] !== 'ztmpl') {
-        const line = token.map ? token.map[0] + 1 : '?';
         throw new Error(
           `Unsupported directive "${unsupportedMatch[1]}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
         );
@@ -220,12 +237,16 @@ export function createZdocParser(
       // Not a ztmpl fence — leave it alone
       if (!info.startsWith('{ztmpl')) continue;
 
-      const attrs = parseZtmplAttrs(info);
+      const { attrs, unsupported } = parseZtmplAttrs(info, FENCED_ATTRS);
+      if (unsupported !== undefined) {
+        throw new Error(
+          `Unsupported attribute "${unsupported}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+        );
+      }
 
       // Build menus from input attribute
       const menusOrError = transpileInputToMenuValue(attrs.input, inputDefs);
       if (typeof menusOrError === 'string') {
-        const line = token.map ? token.map[0] + 1 : '?';
         throw new Error(
           `Input "${menusOrError}" used in directive on page ${pageId}, block ${blockPath ?? '(inline)'} is not defined in [lang].yaml at line ${line}`,
         );
@@ -281,11 +302,17 @@ export function createZdocParser(
 
         // A `{ztmpl …}` marker immediately followed by a code span is an
         // inline Template; attributes go through the same parser as fences
-        // (only `lang` is honoured here — strictness lands in ticket 07).
+        // but only `lang` is honoured here — anything else is rejected.
         const m = INLINE_MARKER_RE.exec(text.content);
         if (!m) continue;
 
-        const attrs = parseZtmplAttrs(m[1]!);
+        const { attrs, unsupported } = parseZtmplAttrs(m[1]!, INLINE_ATTRS);
+        if (unsupported !== undefined) {
+          const line = token.map ? token.map[0] + 1 : '?';
+          throw new Error(
+            `Unsupported attribute "${unsupported}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+          );
+        }
         const id = `codeinline-${inlineCounter++}`;
         inlineTemplates.push({ id, template: code.content, lang: attrs.lang });
 

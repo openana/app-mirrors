@@ -202,6 +202,47 @@ function headingIdRule(
   };
 }
 
+/**
+ * Rewrite a relative reference to another Help Doc into the app's in-app
+ * help URL. The canonical route is "/help/<slug>/" (routes.json keys), so
+ * under HashRouter the href form is "#/help/<slug>/" — the same convention
+ * as in-page anchors ("#/help/<slug>/#anchor"). Relative hrefs resolve
+ * against the page's directory URL, mirroring the upstream format's
+ * "<root>/<page>/" layout: "../beta/" from page "alpha" → "#/help/beta/".
+ * Absolute, schemeful and bare-anchor hrefs — and anything not resolving to
+ * a single Help Doc page — are returned unchanged.
+ */
+export function helpDocHref(pageId: string, href: string): string {
+  if (
+    href === '' ||
+    href.startsWith('#') ||
+    href.startsWith('/') ||
+    href.startsWith('//') ||
+    /^[a-z][a-z0-9+.-]*:/i.test(href)
+  ) {
+    return href;
+  }
+  const resolved = new URL(href, `https://zdoc.invalid/help/${pageId}/`);
+  const match = /^\/help\/([^/]+)\/?$/.exec(resolved.pathname);
+  if (!match) return href;
+  return `#/help/${match[1]}/${resolved.search}${resolved.hash}`;
+}
+
+/** Core rule: rewrite link hrefs to other Help Docs via helpDocHref. */
+function helpDocLinksRule(pageId: string) {
+  return (state: StateCore) => {
+    for (const token of state.tokens) {
+      const children = token.type === 'inline' ? (token.children ?? []) : [token];
+      for (const child of children) {
+        if (child.type !== 'link_open') continue;
+        const href = child.attrGet('href');
+        if (typeof href === 'string') child.attrSet('href', helpDocHref(pageId, href));
+      }
+    }
+    return true;
+  };
+}
+
 // ── Combined parser factory ─────────────────────────────────
 
 export interface MarkdownItPluginResult {
@@ -233,6 +274,9 @@ export function createZdocParser(
 
   // Register heading-id rule (populates toc[])
   md.core.ruler.push('heading-id-collect', headingIdRule(toc, pageId, blockPath));
+
+  // Register help-doc link rule (relative doc-to-doc references → in-app URLs)
+  md.core.ruler.push('help-doc-links', helpDocLinksRule(pageId));
 
   // Register ztmpl fence rule (populates codeBlocks[], replaces fence tokens)
   md.core.ruler.push('ztmpl-fence', (state: StateCore) => {

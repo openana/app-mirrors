@@ -26,6 +26,7 @@ import {
 } from '@/lib/help/placeholders';
 import { createInitialState } from '@/lib/help/template-render';
 import type { TemplateRenderContext } from '@/lib/help/template-render';
+import { rewriteAnchorLinks } from '@/lib/help/anchors';
 
 type ContentSegment =
   | { type: 'html'; content: string }
@@ -58,24 +59,6 @@ function splitContentAtPlaceholders(html: string): ContentSegment[] {
   }
 
   return parts;
-}
-
-/**
- * HashRouter keeps the route in the URL fragment, so a bare "#anchor" href
- * replaces the whole hash route and drops the user back to the root page.
- * In-page anchors must therefore carry the route path:
- * "#anchor" → "#/help/debian#anchor".
- */
-function anchorHref(pathname: string, anchor: string) {
-  return `#${pathname}#${anchor.replace(/^#/, '')}`;
-}
-
-/** Rewrites in-page anchors in rendered HTML so they survive HashRouter. */
-function rewriteAnchorLinks(html: string, pathname: string) {
-  return html.replace(
-    /href="#([^"]*)"/g,
-    (_m, anchor: string) => `href="${anchorHref(pathname, anchor)}"`,
-  );
 }
 
 /**

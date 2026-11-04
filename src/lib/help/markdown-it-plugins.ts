@@ -243,6 +243,16 @@ export function createZdocParser(
           `Unsupported attribute "${unsupported}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
         );
       }
+      if (attrs.global && !attrs.input) {
+        throw new Error(
+          `Global directive must have input variables on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+        );
+      }
+      if (attrs.append && !attrs.path) {
+        throw new Error(
+          `Attribute "append" requires "path" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+        );
+      }
 
       // Build menus from input attribute
       const menusOrError = transpileInputToMenuValue(attrs.input, inputDefs);
@@ -255,8 +265,8 @@ export function createZdocParser(
       let placeholder: string;
       if (attrs.global) {
         // A global="true" Template renders its form at this position; its
-        // body is ignored (format spec). The located error for global
-        // without input lands in ticket 07 — it parses here.
+        // body is ignored (format spec). Global without input is rejected
+        // above.
         const formId = `globalmenu-${globalCounter++}`;
         globalForms.push({ id: formId, menus: menusOrError });
         placeholder = `<globalmenu id="${formId}" />`;

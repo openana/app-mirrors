@@ -317,23 +317,6 @@ describe('help pipeline page-data builder', () => {
       expect(data!.content).toContain('<codeblock id="codeblock-0" />');
       expect(data!.content).toContain('<globalmenu id="globalmenu-1" />');
     });
-
-    it('still parses a global="true" Template without input (located error lands in ticket 07)', async () => {
-      const root = await makeDocsTree({
-        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
-        [baseFile('demo', 'index.zh.md')]: [
-          '```{ztmpl global="true"}',
-          'ignored body',
-          '```',
-        ].join('\n'),
-      });
-
-      const data = await getContentBySegments(root, ['demo'], 'zh');
-
-      expect(data!.globalForms).toEqual([{ id: 'globalmenu-0', menus: [] }]);
-      expect(data!.content).toContain('<globalmenu id="globalmenu-0" />');
-      expect(data!.codeBlocks).toEqual([]);
-    });
   });
 
   describe('Site Overrides', () => {

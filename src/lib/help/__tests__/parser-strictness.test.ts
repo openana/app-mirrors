@@ -78,5 +78,54 @@ describe('parser strictness', () => {
       expect(message).toContain('index.zh.md');
       expect(message).toContain('at line 3');
     });
+
+    it('reports page, block and line for append without a file path', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: [
+          '第一行。',
+          '',
+          '```{ztmpl lang="bash" append="true"}',
+          'code',
+          '```',
+        ].join('\n'),
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      expect(message).toContain('Attribute "append" requires "path"');
+      expect(message).toContain('on page demo');
+      expect(message).toContain('index.zh.md');
+      expect(message).toContain('at line 3');
+    });
+  });
+
+  describe('global Template bodies', () => {
+    it('ignores the body of a global Template silently (format spec)', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    option:',
+          '      stable:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: [
+          '```{ztmpl global="true" input="release"}',
+          '这份内容会被忽略 {{release}}',
+          '```',
+        ].join('\n'),
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+
+      expect(data!.globalForms).toEqual([
+        { id: 'globalmenu-0', menus: [{ title: '发行版', items: [['stable', { release: 'stable' }]] }] },
+      ]);
+      expect(data!.compiledTemplates).toEqual({});
+      expect(data!.content).not.toContain('会被忽略');
+    });
   });
 });

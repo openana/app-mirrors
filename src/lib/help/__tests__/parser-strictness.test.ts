@@ -10,12 +10,22 @@
  * submodule being present).
  */
 
+import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { getContentBySegments } from '../parse-markdown';
+import { getContentBySegments, getAvailableSegments, transpileInput } from '../parse-markdown';
+import { createInitialState, renderTemplate } from '../template-render';
+import type { ZDocInput } from '../types';
 import { baseFile, errorMessageFrom, localFile, makeDocsTree, removeDocsTrees } from './docs-tree';
 
 afterAll(removeDocsTrees);
+
+const settings = {
+  host: 'mirrors.example.edu.cn',
+  cname: 'demo',
+  sudoEnabled: true,
+  httpsEnabled: true,
+};
 
 describe('parser strictness', () => {
   describe('located errors', () => {
@@ -201,6 +211,97 @@ describe('parser strictness', () => {
       ]);
       expect(data!.compiledTemplates).toEqual({});
       expect(data!.content).not.toContain('会被忽略');
+    });
+  });
+
+  describe('non-string option values', () => {
+    it('type-checks non-string option values in the input typings', () => {
+      // Boolean companion values (the debian `sid` flag) and entry-less
+      // options must be assignable to ZDocInput without casts.
+      const input: ZDocInput = {
+        _: '发行版',
+        default: 'testing',
+        option: {
+          trixie: { _: 'Debian 13 (trixie)', security: '-security' },
+          testing: null,
+          sid: { sid: true, nonfree: ' non-free' },
+        },
+      };
+
+      const menu = transpileInput('release', input);
+
+      // The default names an entry-less option — its key is the label.
+      expect(menu).toEqual({
+        title: '发行版',
+        items: [
+          ['testing', { release: 'testing' }],
+          ['Debian 13 (trixie)', { release: 'trixie', security: '-security' }],
+          ['sid', { release: 'sid', sid: true, nonfree: ' non-free' }],
+        ],
+      });
+    });
+
+    it('renders a boolean option flag through both seams (debian sid shape)', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    option:',
+          '      trixie:',
+          '        _: Debian 13 (trixie)',
+          '      sid:',
+          '        sid: true',
+          "        nonfree: ' non-free'",
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: [
+          '```{ztmpl input="release"}',
+          '{{#sid}}deb-src {{endpoint}}/sid main{{/sid}}{{^sid}}deb {{endpoint}}/{{release}} main{{/sid}}',
+          '```',
+        ].join('\n'),
+      });
+
+      const data = await getContentBySegments(root, ['demo'], 'zh');
+      const block = data!.codeBlocks[0]!;
+
+      expect(block.menus).toEqual([
+        {
+          title: '发行版',
+          items: [
+            ['Debian 13 (trixie)', { release: 'trixie' }],
+            ['sid', { release: 'sid', sid: true, nonfree: ' non-free' }],
+          ],
+        },
+      ]);
+
+      const template = data!.compiledTemplates[block.id]!;
+      // Pre-selected default (trixie) takes the non-sid branch …
+      expect(
+        renderTemplate(template, { block: createInitialState(block.menus) }, settings),
+      ).toBe('deb https://mirrors.example.edu.cn/demo/trixie main');
+      // … and the boolean flag switches to the sid branch.
+      expect(
+        renderTemplate(template, { block: { release: 'sid', sid: true, nonfree: ' non-free' } }, settings),
+      ).toBe('deb-src https://mirrors.example.edu.cn/demo/sid main');
+    });
+  });
+
+  describe('Base Docs corpus', () => {
+    const zdocDir = path.resolve(process.cwd(), 'zdoc');
+    const baseDocsDir = path.join(zdocDir, 'global');
+
+    describe.skipIf(!fs.existsSync(baseDocsDir))('zdoc submodule present', () => {
+      it('parses every page in the corpus with no false positives', async () => {
+        const segments = await getAvailableSegments(zdocDir);
+        expect(segments.length).toBeGreaterThan(0);
+
+        for (const segment of segments) {
+          const data = await getContentBySegments(zdocDir, segment, 'zh');
+          expect(data, `page ${segment.join('/')} produced no data`).not.toBeNull();
+        }
+      });
     });
   });
 });

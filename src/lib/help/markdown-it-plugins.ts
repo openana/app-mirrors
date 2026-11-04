@@ -10,6 +10,7 @@ import MarkdownIt from 'markdown-it';
 import type { StateCore } from 'markdown-it';
 import GithubSlugger from 'github-slugger';
 import type { ZDocInput, InputType, ToC, GlobalForm } from './types';
+import { locatedError } from './errors';
 import { transpileInput } from './parse-markdown';
 
 // ── Shared types ────────────────────────────────────────────
@@ -148,8 +149,11 @@ function headingIdRule(
           // Validate it's a valid slug
           if (customId !== slugger.slug(customId)) {
             const line = open.map ? open.map[0] + 1 : '?';
-            throw new Error(
-              `Expected header ID to be a valid slug. You specified: {#${customId}} on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+            throw locatedError(
+              pageId,
+              blockPath,
+              line,
+              `Expected header ID to be a valid slug. You specified: {#${customId}}`,
             );
           }
           // Strip the {#id} from the text content
@@ -229,8 +233,11 @@ export function createZdocParser(
       // Check for unsupported directives: {something ...} that isn't {ztmpl}
       const unsupportedMatch = info.match(/^\{(\w[\w-]*)/);
       if (unsupportedMatch && unsupportedMatch[1] !== 'ztmpl') {
-        throw new Error(
-          `Unsupported directive "${unsupportedMatch[1]}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+        throw locatedError(
+          pageId,
+          blockPath,
+          line,
+          `Unsupported directive "${unsupportedMatch[1]}"`,
         );
       }
 
@@ -239,19 +246,18 @@ export function createZdocParser(
 
       const { attrs, unsupported } = parseZtmplAttrs(info, FENCED_ATTRS);
       if (unsupported !== undefined) {
-        throw new Error(
-          `Unsupported attribute "${unsupported}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
-        );
+        throw locatedError(pageId, blockPath, line, `Unsupported attribute "${unsupported}"`);
       }
       if (attrs.global && !attrs.input) {
-        throw new Error(
-          `Global directive must have input variables on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
+        throw locatedError(
+          pageId,
+          blockPath,
+          line,
+          'Global directive must have input variables',
         );
       }
       if (attrs.append && !attrs.path) {
-        throw new Error(
-          `Attribute "append" requires "path" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
-        );
+        throw locatedError(pageId, blockPath, line, 'Attribute "append" requires "path"');
       }
 
       // Build menus from input attribute
@@ -319,9 +325,7 @@ export function createZdocParser(
         const { attrs, unsupported } = parseZtmplAttrs(m[1]!, INLINE_ATTRS);
         if (unsupported !== undefined) {
           const line = token.map ? token.map[0] + 1 : '?';
-          throw new Error(
-            `Unsupported attribute "${unsupported}" on page ${pageId}, block ${blockPath ?? '(inline)'} at line ${line}`,
-          );
+          throw locatedError(pageId, blockPath, line, `Unsupported attribute "${unsupported}"`);
         }
         const id = `codeinline-${inlineCounter++}`;
         inlineTemplates.push({ id, template: code.content, lang: attrs.lang });

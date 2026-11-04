@@ -25,6 +25,7 @@ import {
   type ExtractedCodeBlock,
   type ExtractedInlineTemplate,
 } from './markdown-it-plugins';
+import { locatedError } from './errors';
 
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
@@ -76,8 +77,11 @@ function validateInputDefaults(
       | null
       | undefined;
     const line = node?.range ? source.lineCounter.linePos(node.range[0]).line : '?';
-    throw new Error(
-      `Default "${def}" is not an option of input "${name}" on page ${page}, block ${source.path} at line ${line}`,
+    throw locatedError(
+      page,
+      source.path,
+      line,
+      `Default "${def}" is not an option of input "${name}"`,
     );
   }
 }

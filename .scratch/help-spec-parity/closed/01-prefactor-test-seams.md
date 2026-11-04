@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-human
+**Status:** done (archived)
 
 - [x] `test` script runs Vitest; suite is green
 - [x] Fixture-tree harness drives the page-data builder; assertions cover content HTML, code blocks, headings and meta

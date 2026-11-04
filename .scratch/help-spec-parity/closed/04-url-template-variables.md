@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Prefactor — test seams and runner, 02: Rename the site-config `endpoint` field to `host`
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] `path` renders `/<cname>`
-- [ ] Mirror Endpoint URL derives from scheme, Host and path in a single computation
-- [ ] Render-seam tests: Host + path equals the Mirror Endpoint URL under both schemes
-- [ ] Regression: gentoo-portage rsync line and ghcup install-script URLs render complete
-- [ ] Deferred follow-up (not in this ticket): derive `path` from the selected Site's real mirrorz URL when it diverges from `cname`
+- [x] `path` renders `/<cname>`
+- [x] Mirror Endpoint URL derives from scheme, Host and path in a single computation
+- [x] Render-seam tests: Host + path equals the Mirror Endpoint URL under both schemes
+- [x] Regression: gentoo-portage rsync line and ghcup install-script URLs render complete
+- [x] Deferred follow-up (not in this ticket): derive `path` from the selected Site's real mirrorz URL when it diverges from `cname`

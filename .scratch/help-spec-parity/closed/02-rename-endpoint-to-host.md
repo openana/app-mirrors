@@ -4,8 +4,8 @@
 
 **Blocked by:** 01: Prefactor — test seams and runner
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Config field and all readers renamed; nothing references the old name
-- [ ] Type check and production build pass
-- [ ] Test suite green with unchanged characterizations (this is a pure rename)
+- [x] Config field and all readers renamed; nothing references the old name
+- [x] Type check and production build pass
+- [x] Test suite green with unchanged characterizations (this is a pure rename)

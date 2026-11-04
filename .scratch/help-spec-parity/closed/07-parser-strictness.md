@@ -4,12 +4,12 @@
 
 **Blocked by:** 05: Global Inputs, 06: Inline Templates
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Unknown Template attribute → located error (fenced and inline alike)
-- [ ] `global` without `input` → located error
-- [ ] `default` not among the options → located error
-- [ ] `append` without a file path → located error
-- [ ] Non-string option values type-check and render
-- [ ] Existing errors (unsupported directive, undefined input) unchanged
-- [ ] The entire Base Docs corpus parses with no false positives
+- [x] Unknown Template attribute → located error (fenced and inline alike)
+- [x] `global` without `input` → located error
+- [x] `default` not among the options → located error
+- [x] `append` without a file path → located error
+- [x] Non-string option values type-check and render
+- [x] Existing errors (unsupported directive, undefined input) unchanged
+- [x] The entire Base Docs corpus parses with no false positives

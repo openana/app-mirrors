@@ -4,11 +4,11 @@
 
 **Blocked by:** 01: Prefactor — test seams and runner
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Submodule relocated to `zdoc/global/`; submodule configuration correct; submodule update works and reports a clean tree
-- [ ] `zdoc/local/` holds Site Overrides; an override shadows or extends the Base Docs block/page of the same name
-- [ ] A page defined only under `zdoc/local/` renders end to end (config, blocks, interactive Templates)
-- [ ] Page enumeration is the union of both trees
-- [ ] Pre-rendered help pages build from the new layout
-- [ ] Pipeline-seam tests cover shadowing and the local-only page
+- [x] Submodule relocated to `zdoc/global/`; submodule configuration correct; submodule update works and reports a clean tree
+- [x] `zdoc/local/` holds Site Overrides; an override shadows or extends the Base Docs block/page of the same name
+- [x] A page defined only under `zdoc/local/` renders end to end (config, blocks, interactive Templates)
+- [x] Page enumeration is the union of both trees
+- [x] Pre-rendered help pages build from the new layout
+- [x] Pipeline-seam tests cover shadowing and the local-only page

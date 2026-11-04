@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Prefactor — test seams and runner, 05: Global Inputs
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Marker-then-code-span renders as a Template with the shared variable context
-- [ ] `lang` syntax-highlights inline output
-- [ ] Non-template braces stay literal (regression with shell text containing braces)
-- [ ] Regressions: FreeBSD cover list, gentoo `sync-uri` sentence, julia-releases `JULIAUP_SERVER`, kodi step text
-- [ ] Fenced and inline Templates resolve variables identically (one shared render function)
+- [x] Marker-then-code-span renders as a Template with the shared variable context
+- [x] `lang` syntax-highlights inline output
+- [x] Non-template braces stay literal (regression with shell text containing braces)
+- [x] Regressions: FreeBSD cover list, gentoo `sync-uri` sentence, julia-releases `JULIAUP_SERVER`, kodi step text
+- [x] Fenced and inline Templates resolve variables identically (one shared render function)

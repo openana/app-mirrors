@@ -4,10 +4,10 @@
 
 **Blocked by:** 04: URL Template Variables (`path`, Mirror Endpoint URL)
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Filtered scheme forces `scheme` and the Mirror Endpoint URL everywhere (fenced and inline Templates)
-- [ ] HTTPS toggle disabled on filtered pages with a localized hint
-- [ ] Unfiltered pages behave exactly as before
-- [ ] Regressions: pypi, crates.io-index, pytorch pages render https-only
-- [ ] Tests at the render seam (forced scheme) and the pipeline seam (filter plumbing into page meta)
+- [x] Filtered scheme forces `scheme` and the Mirror Endpoint URL everywhere (fenced and inline Templates)
+- [x] HTTPS toggle disabled on filtered pages with a localized hint
+- [x] Unfiltered pages behave exactly as before
+- [x] Regressions: pypi, crates.io-index, pytorch pages render https-only
+- [x] Tests at the render seam (forced scheme) and the pipeline seam (filter plumbing into page meta)

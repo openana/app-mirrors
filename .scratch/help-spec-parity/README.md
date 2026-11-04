@@ -20,21 +20,22 @@ Full specification: [`spec.md`](./spec.md) — label `ready-for-agent`.
 
 ## Tickets
 
-Work items live in [`issues/`](./issues/), numbered in dependency order. The frontier is any
-ticket whose blockers are done — currently `01` alone; after it lands, `02`, `03`, `05` and `09`
-are all startable in parallel.
+All nine tickets are **done and archived** under [`closed/`](./closed/) — implemented on the
+`integration/help-spec-parity` branch (each ticket merged as its own integration commit; a
+post-implementation code review landed as `fix/code-review-findings`). The [`issues/`](./issues/)
+directory is empty.
 
-| Ticket | Blocked by |
-|---|---|
-| [`01` Prefactor — test seams and runner](./issues/01-prefactor-test-seams.md) | — |
-| [`02` Rename the site-config `endpoint` field to `host`](./issues/02-rename-endpoint-to-host.md) | 01 |
-| [`03` Base Docs and Site Overrides storage layout](./issues/03-base-docs-site-overrides-layout.md) | 01 |
-| [`04` URL Template Variables](./issues/04-url-template-variables.md) | 01, 02 |
-| [`05` Global Inputs](./issues/05-global-inputs.md) | 01 |
-| [`06` Inline Templates](./issues/06-inline-templates.md) | 01, 05 |
-| [`07` Parser strictness](./issues/07-parser-strictness.md) | 05, 06 |
-| [`08` `filter.scheme` enforcement](./issues/08-filter-scheme-enforcement.md) | 04 |
-| [`09` Git Mirror URLs](./issues/09-git-mirror-urls.md) | 01 |
+| Ticket | Blocked by | Closed |
+|---|---|---|
+| [`01` Prefactor — test seams and runner](./closed/01-prefactor-test-seams.md) | — | ✓ |
+| [`02` Rename the site-config `endpoint` field to `host`](./closed/02-rename-endpoint-to-host.md) | 01 | ✓ |
+| [`03` Base Docs and Site Overrides storage layout](./closed/03-base-docs-site-overrides-layout.md) | 01 | ✓ |
+| [`04` URL Template Variables](./closed/04-url-template-variables.md) | 01, 02 | ✓ |
+| [`05` Global Inputs](./closed/05-global-inputs.md) | 01 | ✓ |
+| [`06` Inline Templates](./closed/06-inline-templates.md) | 01, 05 | ✓ |
+| [`07` Parser strictness](./closed/07-parser-strictness.md) | 05, 06 | ✓ |
+| [`08` `filter.scheme` enforcement](./closed/08-filter-scheme-enforcement.md) | 04 | ✓ |
+| [`09` Git Mirror URLs](./closed/09-git-mirror-urls.md) | 01 | ✓ |
 
 The earlier flat plan files were superseded by these tickets and removed;
 [`quick-config-append.md`](./quick-config-append.md) remains parked as a deferred, non-ticket item

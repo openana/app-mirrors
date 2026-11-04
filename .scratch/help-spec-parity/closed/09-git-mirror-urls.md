@@ -4,10 +4,10 @@
 
 **Blocked by:** 01: Prefactor — test seams and runner
 
-**Status:** ready-for-agent
+**Status:** done (archived)
 
-- [ ] Mirror list links Git Mirrors at `/{cname}/`, like every other mirror
-- [ ] Sync view links go through the same shared helper
-- [ ] No `.git` special-casing remains in link construction
-- [ ] Helper test: a Git Mirror cname maps to `/{cname}/` (e.g. `linux.git` → `/linux.git/`)
-- [ ] Base Docs subpath references like `{{endpoint}}/git/…` remain untouched (unrelated to this URL shape)
+- [x] Mirror list links Git Mirrors at `/{cname}/`, like every other mirror
+- [x] Sync view links go through the same shared helper
+- [x] No `.git` special-casing remains in link construction
+- [x] Helper test: a Git Mirror cname maps to `/{cname}/` (e.g. `linux.git` → `/linux.git/`)
+- [x] Base Docs subpath references like `{{endpoint}}/git/…` remain untouched (unrelated to this URL shape)

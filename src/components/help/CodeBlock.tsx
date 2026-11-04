@@ -1,25 +1,16 @@
 import { useState, useMemo, useCallback } from 'react';
 import type { InputType, MenuValue } from '@/lib/help/types';
 import { createInitialState, renderTemplate } from '@/lib/help/template-render';
+import type { TemplateRenderContext } from '@/lib/help/template-render';
 import { highlightCode } from '@/lib/help/highlight';
 import InputMenu from './InputMenu';
 
-interface CodeBlockProps {
+/** One fenced Template's UI: its input form plus the rendered code. */
+export interface CodeBlockProps extends TemplateRenderContext {
   templateId: string;
-  compiledTemplates: Record<string, string>;
   menus?: InputType[];
   lang?: string;
   filepath?: string;
-  /** Mirror Host (domain name), e.g. "mirrors.xjtu.edu.cn" (glossary: Host) */
-  host?: string;
-  /** Page slug, e.g. "debian" — the mirror's project directory `{{path}}` (`/<cname>`) */
-  cname?: string;
-  sudoEnabled?: boolean;
-  httpsEnabled?: boolean;
-  /** Page config `filter.scheme` (spec "Protocol enforcement"): forces the scheme regardless of the toggle. */
-  forcedScheme?: string;
-  /** Page-level Global Input selections (ADR 0007). */
-  globals?: Record<string, MenuValue>;
 }
 
 export default function CodeBlock({

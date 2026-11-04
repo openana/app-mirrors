@@ -1,21 +1,10 @@
-import type { MenuValue } from '@/lib/help/types';
 import { renderTemplate } from '@/lib/help/template-render';
+import type { TemplateRenderContext } from '@/lib/help/template-render';
 import { highlightCode } from '@/lib/help/highlight';
 
-export interface CodeInlineProps {
+export interface CodeInlineProps extends TemplateRenderContext {
   templateId: string;
-  compiledTemplates: Record<string, string>;
   lang?: string;
-  /** Mirror Host (domain name), e.g. "mirrors.xjtu.edu.cn" (glossary: Host) */
-  host?: string;
-  /** Page slug, e.g. "debian" — appended to the host in the Mirror Endpoint URL */
-  cname?: string;
-  sudoEnabled?: boolean;
-  httpsEnabled?: boolean;
-  /** Page config `filter.scheme` (spec "Protocol enforcement"): forces the scheme regardless of the toggle. */
-  forcedScheme?: string;
-  /** Page-level Global Input selections (ADR 0007). */
-  globals?: Record<string, MenuValue>;
 }
 
 /**

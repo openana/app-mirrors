@@ -31,6 +31,20 @@ export interface TemplateRenderSettings {
 }
 
 /**
+ * Everything a Template render needs besides the reader's block-local
+ * selections: the compiled template store, the page-level Global Input
+ * store (ADR 0007), and the settings the built-in variables derive from.
+ * Shared by the fenced and inline Template components and the help page's
+ * call sites, so the clump is spelled out once.
+ */
+export interface TemplateRenderContext extends TemplateRenderSettings {
+  /** Raw mustache templates by placeholder id (the client compiles them with Hogan). */
+  compiledTemplates: Record<string, string>;
+  /** Page-level Global Input selections, keyed by form id (ADR 0007). */
+  globals?: Record<string, MenuValue>;
+}
+
+/**
  * The reader's selections feeding one Template render (ADR 0007).
  * Resolution order: block inputs < Global Inputs < built-ins.
  */

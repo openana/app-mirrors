@@ -10,7 +10,7 @@ import {
 import { createPortal } from 'react-dom';
 import CodeBlock from '@/components/help/CodeBlock';
 import InputMenu from '@/components/help/InputMenu';
-import CodeInline, { type CodeInlineProps } from '@/components/help/CodeInline';
+import CodeInline from '@/components/help/CodeInline';
 import HelpNav from '@/components/help/HelpNav';
 import {
   HelpSettingsProvider,
@@ -20,6 +20,7 @@ import { mirrorSites } from '@/config/mirror-sites';
 import { useTranslation } from '@/i18n';
 import type { HelpPageData, InlineTemplate, MenuValue } from '@/lib/help/types';
 import { createInitialState } from '@/lib/help/template-render';
+import type { TemplateRenderContext } from '@/lib/help/template-render';
 
 type ContentSegment =
   | { type: 'html'; content: string }
@@ -83,11 +84,11 @@ function rewriteAnchorLinks(html: string, pathname: string) {
 function ContentHtml({
   html,
   inlineTemplates,
-  ...renderProps
+  ...render
 }: {
   html: string;
   inlineTemplates: Map<string, InlineTemplate>;
-} & Omit<CodeInlineProps, 'templateId' | 'lang'>) {
+} & TemplateRenderContext) {
   const ref = useRef<HTMLDivElement>(null);
   const [targets, setTargets] = useState<
     Array<{ id: string; node: HTMLElement }>
@@ -110,7 +111,7 @@ function ContentHtml({
         const entry = inlineTemplates.get(id);
         if (!entry) return null;
         return createPortal(
-          <CodeInline key={id} templateId={id} lang={entry.lang} {...renderProps} />,
+          <CodeInline key={id} templateId={id} lang={entry.lang} {...render} />,
           node,
         );
       })}
@@ -230,6 +231,30 @@ function HelpContent({
     [data.content, pathname],
   );
 
+  // One render context drives every Template on the page: the compiled
+  // templates, the page-level Global Input store and the built-in settings
+  // spelled out once (ADR 0007).
+  const render: TemplateRenderContext = useMemo(
+    () => ({
+      compiledTemplates: data.compiledTemplates,
+      host: selectedSite.host,
+      cname: data.meta.cname,
+      sudoEnabled,
+      httpsEnabled,
+      forcedScheme: data.meta.filter?.scheme,
+      globals: globalState,
+    }),
+    [
+      data.compiledTemplates,
+      data.meta.cname,
+      data.meta.filter?.scheme,
+      selectedSite.host,
+      sudoEnabled,
+      httpsEnabled,
+      globalState,
+    ],
+  );
+
   return (
     <>
       {segments.map((seg, i) => {
@@ -239,13 +264,7 @@ function HelpContent({
               key={`html-${i}`}
               html={seg.content}
               inlineTemplates={inlineTemplateMap}
-              compiledTemplates={data.compiledTemplates}
-              host={selectedSite.host}
-              cname={data.meta.cname}
-              sudoEnabled={sudoEnabled}
-              httpsEnabled={httpsEnabled}
-              forcedScheme={data.meta.filter?.scheme}
-              globals={globalState}
+              {...render}
             />
           );
         }
@@ -271,16 +290,10 @@ function HelpContent({
           <CodeBlock
             key={cb.id}
             templateId={cb.id}
-            compiledTemplates={data.compiledTemplates}
             menus={cb.menus}
             lang={cb.lang}
             filepath={cb.filepath}
-            host={selectedSite.host}
-            cname={data.meta.cname}
-            sudoEnabled={sudoEnabled}
-            httpsEnabled={httpsEnabled}
-            forcedScheme={data.meta.filter?.scheme}
-            globals={globalState}
+            {...render}
           />
         );
       })}

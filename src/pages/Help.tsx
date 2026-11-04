@@ -178,9 +178,13 @@ function HelpSettingsBar({ forcedScheme }: { forcedScheme?: string }) {
         />
         <span>HTTPS</span>
       </label>
-      {/* Spec "Protocol enforcement" (story 14): a filtered page disables the toggle with a hint. */}
+      {/* Spec "Protocol enforcement" (story 14): a filtered page disables the
+          toggle with a hint naming the forced scheme — enforcement is generic,
+          `scheme: http` forces http too. */}
       {forcedScheme && (
-        <span className="help-toggle-hint">{t('help.httpsOnlyHint')}</span>
+        <span className="help-toggle-hint">
+          {t('help.schemeOnlyHint', { scheme: forcedScheme.toUpperCase() })}
+        </span>
       )}
     </div>
   );

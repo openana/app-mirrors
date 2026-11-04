@@ -39,9 +39,19 @@ describe('template render seam', () => {
       );
     });
 
-    it('renders {{path}} empty (known gap — ticket 04 makes it /demo)', () => {
+    it('renders {{path}} as the project directory /<cname>', () => {
       expect(renderTemplate('rsync://{{host}}{{path}}', {}, settings)).toBe(
-        'rsync://mirrors.example.edu.cn',
+        'rsync://mirrors.example.edu.cn/demo',
+      );
+    });
+
+    it('keeps Host + path equal to the Mirror Endpoint URL under both schemes', () => {
+      const vars = '{{scheme}}|{{host}}|{{path}}|{{endpoint}}';
+      expect(renderTemplate(vars, {}, settings)).toBe(
+        'https|mirrors.example.edu.cn|/demo|https://mirrors.example.edu.cn/demo',
+      );
+      expect(renderTemplate(vars, {}, { ...settings, httpsEnabled: false })).toBe(
+        'http|mirrors.example.edu.cn|/demo|http://mirrors.example.edu.cn/demo',
       );
     });
 
@@ -68,10 +78,10 @@ describe('template render seam', () => {
       );
     });
 
-    it('omits the project path from the endpoint when the page has no cname', () => {
-      expect(renderTemplate('{{endpoint}}', {}, { host: 'mirrors.example.edu.cn' })).toBe(
-        'https://mirrors.example.edu.cn',
-      );
+    it('omits the project path from {{path}} and the endpoint when the page has no cname', () => {
+      expect(
+        renderTemplate('{{path}}|{{endpoint}}', {}, { host: 'mirrors.example.edu.cn' }),
+      ).toBe('|https://mirrors.example.edu.cn');
     });
 
     it('defaults to https without sudo when no settings are given', () => {
@@ -90,7 +100,7 @@ describe('template render seam', () => {
       };
       expect(
         renderTemplate('{{scheme}}|{{host}}|{{path}}|{{endpoint}}|{{sudo}}', { block: selection }, settings),
-      ).toBe('https|mirrors.example.edu.cn||https://mirrors.example.edu.cn/demo|sudo ');
+      ).toBe('https|mirrors.example.edu.cn|/demo|https://mirrors.example.edu.cn/demo|sudo ');
     });
   });
 

@@ -4,10 +4,9 @@
  * Renders a raw mustache Template against a selection store plus the
  * built-in variables derived from the page settings. Extracted from
  * CodeBlock.tsx so the component is a thin caller and the variable
- * resolution is testable without a DOM.
- *
- * Known gaps such as `path` always rendering empty are locked by tests
- * and fixed in later tickets (04–08).
+ * resolution is testable without a DOM. The same function serves fenced
+ * and inline Templates, so the Mirror Endpoint URL is computed in exactly
+ * one place (spec "URL variables").
  */
 
 import Hogan from 'hogan.js';
@@ -17,7 +16,7 @@ import type { InputType, MenuValue } from './types';
 export interface TemplateRenderSettings {
   /** Mirror host name, e.g. "mirrors.xjtu.edu.cn" (config `host` field). */
   host?: string;
-  /** Page slug (cname), e.g. "debian" — appended to the host in the Mirror Endpoint URL. */
+  /** Page slug (cname), e.g. "debian" — the mirror's project directory: rendered as `{{path}}` (`/<cname>`) and part of the Mirror Endpoint URL. */
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
@@ -73,9 +72,11 @@ export function renderTemplate(
   try {
     const template = Hogan.compile(rawTemplate);
     const scheme = httpsEnabled ? 'https' : 'http';
-    const endpoint = host
-      ? `${scheme}://${host}${cname ? `/${cname}` : ''}`
-      : '(no mirror selected)';
+    // One computation (spec "URL variables"): `path` is the project
+    // directory /<cname> and the Mirror Endpoint URL is exactly
+    // scheme + "://" + host + path — the two can never drift apart.
+    const path = cname ? `/${cname}` : '';
+    const endpoint = host ? `${scheme}://${host}${path}` : '(no mirror selected)';
     // Every Global Input form shares one page-level store; merge all forms
     // (like the reference consumer) so any form drives every Template.
     const globalValues = Object.values(selection.globals ?? {}).reduce<MenuValue>(
@@ -87,8 +88,7 @@ export function renderTemplate(
       ...globalValues,
       endpoint,
       host: host || '(no mirror selected)',
-      // Known gap (spec ticket 04): `path` is always empty instead of `/${cname}`.
-      path: '',
+      path,
       sudo: sudoEnabled ? 'sudo ' : '',
       sudoE: sudoEnabled ? 'sudo -E ' : '',
       http_protocol: httpsEnabled ? 'https://' : 'http://',

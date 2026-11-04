@@ -100,6 +100,26 @@ describe('parser strictness', () => {
       expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
+    it('reports page, block and line when whitespace separates an inline marker from its code span', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: [
+          '第一行。',
+          '',
+          '行内模板 {ztmpl} `内容`。',
+        ].join('\n'),
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      // Author intent is clear there — fail loudly instead of leaking raw
+      // text (spec story 32).
+      expect(message).toContain(
+        'Unexpected whitespace between the inline Template marker and its code span',
+      );
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
+    });
+
     it('reports page, block and line for a default outside the option set (block names the config source file)', async () => {
       const root = await makeDocsTree({
         [baseFile('demo', 'zh.yaml')]: [

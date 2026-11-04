@@ -115,6 +115,12 @@ export function transpileInputToMenuValue(
  * Any other braces in text (`awk '{print $1}'`, `${var}`) are literal.
  */
 const INLINE_MARKER_RE = /\{ztmpl([^{}]*)\}$/;
+/**
+ * The same marker with only whitespace before the code span: the author
+ * clearly meant a Template there, so it fails loudly instead of leaking
+ * raw text (spec story 32).
+ */
+const GAPPED_INLINE_MARKER_RE = /\{ztmpl([^{}]*)\}\s+$/;
 
 // ── heading-id rule ─────────────────────────────────────────
 
@@ -332,7 +338,18 @@ export function createZdocParser(
         // inline Template; attributes go through the same parser as fences
         // but only `lang` is honoured here — anything else is rejected.
         const m = INLINE_MARKER_RE.exec(text.content);
-        if (!m) continue;
+        if (!m) {
+          if (GAPPED_INLINE_MARKER_RE.test(text.content)) {
+            const line = token.map ? token.map[0] + 1 : '?';
+            throw locatedError(
+              pageId,
+              blockPath,
+              line,
+              'Unexpected whitespace between the inline Template marker and its code span',
+            );
+          }
+          continue;
+        }
 
         const { attrs, unsupported } = parseZtmplAttrs(m[1]!, INLINE_ATTRS);
         if (unsupported !== undefined) {

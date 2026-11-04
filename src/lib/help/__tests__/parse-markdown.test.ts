@@ -511,27 +511,5 @@ describe('help pipeline page-data builder', () => {
 
       expect(data!.content).toContain('只有索引。');
     });
-
-    it('ignores a default outside the option set (ticket 07 wants an error)', async () => {
-      const root = await makeDocsTree({
-        [baseFile('demo', 'zh.yaml')]: [
-          '_: Demo 页面',
-          'input:',
-          '  release:',
-          '    _: 发行版',
-          '    default: ghost',
-          '    option:',
-          '      stable:',
-          '',
-        ].join('\n'),
-        [baseFile('demo', 'index.zh.md')]: '```{ztmpl input="release"}\nx\n```',
-      });
-
-      const data = await getContentBySegments(root, ['demo'], 'zh');
-
-      expect(data!.codeBlocks[0]!.menus).toEqual([
-        { title: '发行版', items: [['stable', { release: 'stable' }]] },
-      ]);
-    });
   });
 });

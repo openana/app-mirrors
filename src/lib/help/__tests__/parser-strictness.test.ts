@@ -10,10 +10,9 @@
  * submodule being present).
  */
 
-import fs from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { getContentBySegments, getAvailableSegments } from '../parse-markdown';
+import { getContentBySegments } from '../parse-markdown';
 import { baseFile, errorMessageFrom, localFile, makeDocsTree, removeDocsTrees } from './docs-tree';
 
 afterAll(removeDocsTrees);
@@ -97,6 +96,82 @@ describe('parser strictness', () => {
       expect(message).toContain('on page demo');
       expect(message).toContain('index.zh.md');
       expect(message).toContain('at line 3');
+    });
+
+    it('reports page, config file and the YAML line for a default outside the option set', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    default: ghost',
+          '    option:',
+          '      stable:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: '```{ztmpl input="release"}\nx\n```',
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      expect(message).toContain('Default "ghost" is not an option of input "release"');
+      expect(message).toContain('on page demo');
+      expect(message).toContain('zh.yaml');
+      expect(message).toContain('at line 5');
+    });
+
+    it('reports a bad default even when the input is never used in a Template', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    default: ghost',
+          '    option:',
+          '      stable:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: '正文，没有任何模板。',
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      expect(message).toContain('Default "ghost" is not an option of input "release"');
+      expect(message).toContain('at line 5');
+    });
+
+    it('points at the Site Override config when the bad default comes from there', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    default: stable',
+          '    option:',
+          '      stable:',
+          '',
+        ].join('\n'),
+        [localFile('demo', 'zh.yaml')]: [
+          '_: Demo 页面',
+          'input:',
+          '  release:',
+          '    _: 发行版',
+          '    default: ghost',
+          '    option:',
+          '      stable:',
+          '',
+        ].join('\n'),
+        [baseFile('demo', 'index.zh.md')]: '```{ztmpl input="release"}\nx\n```',
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      expect(message).toContain('Default "ghost" is not an option of input "release"');
+      expect(message).toContain(path.join(root, 'local', 'demo', 'zh.yaml'));
+      expect(message).toContain('at line 5');
     });
   });
 

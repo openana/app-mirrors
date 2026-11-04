@@ -10,6 +10,7 @@
  */
 
 import Hogan from 'hogan.js';
+import { foldInput } from './types';
 import type { InputType, MenuValue } from './types';
 
 /** Page settings the built-in Template variables are derived from. */
@@ -46,17 +47,17 @@ export interface TemplateSelection {
  * pre-selected so the code is correct before the reader touches anything.
  */
 export function createInitialState(menus: InputType[]): MenuValue {
-  return menus.reduce<MenuValue>((acc, menu) => {
-    let value: MenuValue;
-    if ('items' in menu) {
-      value = menu.items[0]?.[1] || {};
-    } else if ('trueValue' in menu) {
-      value = { [menu.name]: menu.defaultValue ? menu.trueValue : menu.falseValue };
-    } else {
-      value = { [menu.name]: menu.defaultValue || '' };
-    }
-    return { ...acc, ...value };
-  }, {});
+  return menus.reduce<MenuValue>(
+    (acc, menu) => ({
+      ...acc,
+      ...foldInput(menu, {
+        select: (m) => m.items[0]?.[1] || {},
+        switch: (m) => ({ [m.name]: m.defaultValue ? m.trueValue : m.falseValue }),
+        text: (m) => ({ [m.name]: m.defaultValue || '' }),
+      }),
+    }),
+    {},
+  );
 }
 
 /**

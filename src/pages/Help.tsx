@@ -1,7 +1,16 @@
 import { Link, useLocation, useParams } from 'react-router';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  useLayoutEffect,
+  useRef,
+} from 'react';
+import { createPortal } from 'react-dom';
 import CodeBlock from '@/components/help/CodeBlock';
 import CodeBlockMenu from '@/components/help/CodeBlockMenu';
+import CodeInline, { type CodeInlineProps } from '@/components/help/CodeInline';
 import HelpNav from '@/components/help/HelpNav';
 import {
   HelpSettingsProvider,
@@ -9,7 +18,7 @@ import {
 } from '@/contexts/HelpSettingsContext';
 import { mirrorSites } from '@/config/mirror-sites';
 import { useTranslation } from '@/i18n';
-import type { HelpPageData, MenuValue } from '@/lib/help/types';
+import type { HelpPageData, InlineTemplate, MenuValue } from '@/lib/help/types';
 import { createInitialState } from '@/lib/help/template-render';
 
 type ContentSegment =
@@ -61,6 +70,51 @@ function rewriteAnchorLinks(html: string, pathname: string) {
   return html.replace(
     /href="#([^"]*)"/g,
     (_m, anchor: string) => `href="${anchorHref(pathname, anchor)}"`,
+  );
+}
+
+/**
+ * One content HTML segment. Inline Templates sit inside prose (list items,
+ * table cells), so unlike block placeholders they must not split the segment
+ * apart: their `<codeinline id>` targets are mounted via portals instead,
+ * keeping the surrounding HTML structure intact. The wrapper div is
+ * `display: contents` so the segment lays out exactly as the raw HTML would.
+ */
+function ContentHtml({
+  html,
+  inlineTemplates,
+  ...renderProps
+}: {
+  html: string;
+  inlineTemplates: Map<string, InlineTemplate>;
+} & Omit<CodeInlineProps, 'templateId' | 'lang'>) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [targets, setTargets] = useState<
+    Array<{ id: string; node: HTMLElement }>
+  >([]);
+
+  useLayoutEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+    setTargets(
+      Array.from(root.querySelectorAll<HTMLElement>('codeinline[id]')).map(
+        (node) => ({ id: node.getAttribute('id')!, node }),
+      ),
+    );
+  }, [html]);
+
+  return (
+    <div ref={ref} style={{ display: 'contents' }}>
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+      {targets.map(({ id, node }) => {
+        const entry = inlineTemplates.get(id);
+        if (!entry) return null;
+        return createPortal(
+          <CodeInline key={id} templateId={id} lang={entry.lang} {...renderProps} />,
+          node,
+        );
+      })}
+    </div>
   );
 }
 
@@ -146,6 +200,14 @@ function HelpContent({
     return map;
   }, [data.globalForms]);
 
+  const inlineTemplateMap = useMemo(() => {
+    const map = new Map<string, InlineTemplate>();
+    for (const tpl of data.inlineTemplates ?? []) {
+      map.set(tpl.id, tpl);
+    }
+    return map;
+  }, [data.inlineTemplates]);
+
   // One page-level selection store drives every Template on the page
   // (ADR 0007); initial values come from the forms' defaults.
   const [globalState, setGlobalState] = useState<Record<string, MenuValue>>(
@@ -168,9 +230,16 @@ function HelpContent({
       {segments.map((seg, i) => {
         if (seg.type === 'html') {
           return (
-            <div
+            <ContentHtml
               key={`html-${i}`}
-              dangerouslySetInnerHTML={{ __html: seg.content }}
+              html={seg.content}
+              inlineTemplates={inlineTemplateMap}
+              compiledTemplates={data.compiledTemplates}
+              host={selectedSite.host}
+              cname={data.meta.cname}
+              sudoEnabled={sudoEnabled}
+              httpsEnabled={httpsEnabled}
+              globals={globalState}
             />
           );
         }

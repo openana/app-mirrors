@@ -154,15 +154,6 @@ async function loadConf(
   return { _: config._!, ...config } as ZDocConfig;
 }
 
-async function loadBlock(
-  docsDir: string,
-  page: string,
-  block: string,
-  language: string,
-): Promise<{ path: string | null; content: string }> {
-  return loadFile(docsDir, page, `${block}.${language}.md`, '');
-}
-
 // ── Input transpilation ─────────────────────────────────────
 
 export function transpileInput(name: string, input: ZDocInput): InputType {
@@ -275,7 +266,14 @@ export async function getContentBySegments(
   const counters = { codeBlocks: 0, globalForms: 0, inlineTemplates: 0 };
 
   for (const blockName of blockNames) {
-    const { path: blockPath, content } = await loadBlock(docsDir, id, blockName, language);
+    // The resolved source path (Site Override wins) travels as the block's
+    // identity in located errors.
+    const { path: blockPath, content } = await loadFile(
+      docsDir,
+      id,
+      `${blockName}.${language}.md`,
+      '',
+    );
     if (!content) continue;
 
     const { html, codeBlocks, globalForms, inlineTemplates, headings } = parseContentBlock(

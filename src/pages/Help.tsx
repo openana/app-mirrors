@@ -9,8 +9,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import CodeBlock from '@/components/help/CodeBlock';
-import CodeBlockMenu from '@/components/help/CodeBlockMenu';
-import CodeInline, { type CodeInlineProps } from '@/components/help/CodeInline';
+import InputMenu from '@/components/help/InputMenu';
+import CodeInline from '@/components/help/CodeInline';
 import HelpNav from '@/components/help/HelpNav';
 import {
   HelpSettingsProvider,
@@ -19,22 +19,27 @@ import {
 import { mirrorSites } from '@/config/mirror-sites';
 import { useTranslation } from '@/i18n';
 import type { HelpPageData, InlineTemplate, MenuValue } from '@/lib/help/types';
+import {
+  blockPlaceholderRegex,
+  INLINE_PLACEHOLDER_SELECTOR,
+  type BlockPlaceholderKind,
+} from '@/lib/help/placeholders';
 import { createInitialState } from '@/lib/help/template-render';
+import type { TemplateRenderContext } from '@/lib/help/template-render';
 
 type ContentSegment =
   | { type: 'html'; content: string }
-  | { type: 'codeblock'; id: string }
-  | { type: 'globalmenu'; id: string };
+  | { type: BlockPlaceholderKind; id: string };
 
 /**
- * Splits HTML content at <codeblock id="..." /> and <globalmenu id="..." />
- * tags and returns an array of segments: { type: 'html', content } or
- * { type: 'codeblock' | 'globalmenu', id }.
+ * Splits HTML content at block placeholder tags (see
+ * `@/lib/help/placeholders`) and returns an array of segments:
+ * { type: 'html', content } or { type: '<block kind>', id }.
  */
 function splitContentAtPlaceholders(html: string): ContentSegment[] {
   const parts: ContentSegment[] = [];
 
-  const regex = /<(codeblock|globalmenu)\s+id="([^"]+)"\s*\/>/g;
+  const regex = blockPlaceholderRegex();
   let lastIndex = 0;
   let match;
 
@@ -43,7 +48,7 @@ function splitContentAtPlaceholders(html: string): ContentSegment[] {
       parts.push({ type: 'html', content: html.slice(lastIndex, match.index) });
     }
     if (match[2]) {
-      parts.push({ type: match[1] as 'codeblock' | 'globalmenu', id: match[2] });
+      parts.push({ type: match[1] as BlockPlaceholderKind, id: match[2] });
     }
     lastIndex = regex.lastIndex;
   }
@@ -83,11 +88,11 @@ function rewriteAnchorLinks(html: string, pathname: string) {
 function ContentHtml({
   html,
   inlineTemplates,
-  ...renderProps
+  ...render
 }: {
   html: string;
   inlineTemplates: Map<string, InlineTemplate>;
-} & Omit<CodeInlineProps, 'templateId' | 'lang'>) {
+} & TemplateRenderContext) {
   const ref = useRef<HTMLDivElement>(null);
   const [targets, setTargets] = useState<
     Array<{ id: string; node: HTMLElement }>
@@ -97,7 +102,7 @@ function ContentHtml({
     const root = ref.current;
     if (!root) return;
     setTargets(
-      Array.from(root.querySelectorAll<HTMLElement>('codeinline[id]')).map(
+      Array.from(root.querySelectorAll<HTMLElement>(INLINE_PLACEHOLDER_SELECTOR)).map(
         (node) => ({ id: node.getAttribute('id')!, node }),
       ),
     );
@@ -110,7 +115,7 @@ function ContentHtml({
         const entry = inlineTemplates.get(id);
         if (!entry) return null;
         return createPortal(
-          <CodeInline key={id} templateId={id} lang={entry.lang} {...renderProps} />,
+          <CodeInline key={id} templateId={id} lang={entry.lang} {...render} />,
           node,
         );
       })}
@@ -173,9 +178,13 @@ function HelpSettingsBar({ forcedScheme }: { forcedScheme?: string }) {
         />
         <span>HTTPS</span>
       </label>
-      {/* Spec "Protocol enforcement" (story 14): a filtered page disables the toggle with a hint. */}
+      {/* Spec "Protocol enforcement" (story 14): a filtered page disables the
+          toggle with a hint naming the forced scheme — enforcement is generic,
+          `scheme: http` forces http too. */}
       {forcedScheme && (
-        <span className="help-toggle-hint">{t('help.httpsOnlyHint')}</span>
+        <span className="help-toggle-hint">
+          {t('help.schemeOnlyHint', { scheme: forcedScheme.toUpperCase() })}
+        </span>
       )}
     </div>
   );
@@ -230,6 +239,30 @@ function HelpContent({
     [data.content, pathname],
   );
 
+  // One render context drives every Template on the page: the compiled
+  // templates, the page-level Global Input store and the built-in settings
+  // spelled out once (ADR 0007).
+  const render: TemplateRenderContext = useMemo(
+    () => ({
+      compiledTemplates: data.compiledTemplates,
+      host: selectedSite.host,
+      cname: data.meta.cname,
+      sudoEnabled,
+      httpsEnabled,
+      forcedScheme: data.meta.filter?.scheme,
+      globals: globalState,
+    }),
+    [
+      data.compiledTemplates,
+      data.meta.cname,
+      data.meta.filter?.scheme,
+      selectedSite.host,
+      sudoEnabled,
+      httpsEnabled,
+      globalState,
+    ],
+  );
+
   return (
     <>
       {segments.map((seg, i) => {
@@ -239,13 +272,7 @@ function HelpContent({
               key={`html-${i}`}
               html={seg.content}
               inlineTemplates={inlineTemplateMap}
-              compiledTemplates={data.compiledTemplates}
-              host={selectedSite.host}
-              cname={data.meta.cname}
-              sudoEnabled={sudoEnabled}
-              httpsEnabled={httpsEnabled}
-              forcedScheme={data.meta.filter?.scheme}
-              globals={globalState}
+              {...render}
             />
           );
         }
@@ -255,7 +282,7 @@ function HelpContent({
           const form = globalFormMap.get(seg.id);
           if (!form) return null;
           return (
-            <CodeBlockMenu
+            <InputMenu
               key={seg.id}
               menus={form.menus}
               state={globalState[seg.id] ?? {}}
@@ -271,16 +298,10 @@ function HelpContent({
           <CodeBlock
             key={cb.id}
             templateId={cb.id}
-            compiledTemplates={data.compiledTemplates}
             menus={cb.menus}
             lang={cb.lang}
             filepath={cb.filepath}
-            host={selectedSite.host}
-            cname={data.meta.cname}
-            sudoEnabled={sudoEnabled}
-            httpsEnabled={httpsEnabled}
-            forcedScheme={data.meta.filter?.scheme}
-            globals={globalState}
+            {...render}
           />
         );
       })}

@@ -53,7 +53,7 @@ export default function Sync() {
   // The age chart orders purely by age (Q11, amended).
   const ageRows = useMemo(() => sortRowsByAge(rows), [rows]);
 
-  const openMirror = (name: string) => window.location.assign(mirrorHref(name));
+  const openMirror = (cname: string) => window.location.assign(mirrorHref(cname));
 
   const head = (
     <header className="page-head">

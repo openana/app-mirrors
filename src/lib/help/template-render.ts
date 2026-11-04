@@ -10,6 +10,7 @@
  */
 
 import Hogan from 'hogan.js';
+import { foldInput } from './types';
 import type { InputType, MenuValue } from './types';
 
 /** Page settings the built-in Template variables are derived from. */
@@ -30,6 +31,20 @@ export interface TemplateRenderSettings {
 }
 
 /**
+ * Everything a Template render needs besides the reader's block-local
+ * selections: the compiled template store, the page-level Global Input
+ * store (ADR 0007), and the settings the built-in variables derive from.
+ * Shared by the fenced and inline Template components and the help page's
+ * call sites, so the clump is spelled out once.
+ */
+export interface TemplateRenderContext extends TemplateRenderSettings {
+  /** Raw mustache templates by placeholder id (the client compiles them with Hogan). */
+  compiledTemplates: Record<string, string>;
+  /** Page-level Global Input selections, keyed by form id (ADR 0007). */
+  globals?: Record<string, MenuValue>;
+}
+
+/**
  * The reader's selections feeding one Template render (ADR 0007).
  * Resolution order: block inputs < Global Inputs < built-ins.
  */
@@ -46,17 +61,17 @@ export interface TemplateSelection {
  * pre-selected so the code is correct before the reader touches anything.
  */
 export function createInitialState(menus: InputType[]): MenuValue {
-  return menus.reduce<MenuValue>((acc, menu) => {
-    let value: MenuValue;
-    if ('items' in menu) {
-      value = menu.items[0]?.[1] || {};
-    } else if ('trueValue' in menu) {
-      value = { [menu.name]: menu.defaultValue ? menu.trueValue : menu.falseValue };
-    } else {
-      value = { [menu.name]: menu.defaultValue || '' };
-    }
-    return { ...acc, ...value };
-  }, {});
+  return menus.reduce<MenuValue>(
+    (acc, menu) => ({
+      ...acc,
+      ...foldInput(menu, {
+        select: (m) => m.items[0]?.[1] || {},
+        switch: (m) => ({ [m.name]: m.defaultValue ? m.trueValue : m.falseValue }),
+        text: (m) => ({ [m.name]: m.defaultValue || '' }),
+      }),
+    }),
+    {},
+  );
 }
 
 /**

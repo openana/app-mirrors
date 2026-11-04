@@ -16,7 +16,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { getContentBySegments, getAvailableSegments, transpileInput } from '../parse-markdown';
 import { createInitialState, renderTemplate } from '../template-render';
 import type { ZDocInput } from '../types';
-import { baseFile, errorMessageFrom, localFile, makeDocsTree, removeDocsTrees } from './docs-tree';
+import { baseFile, errorMessageFrom, expectLocatedError, localFile, makeDocsTree, removeDocsTrees } from './docs-tree';
 
 afterAll(removeDocsTrees);
 
@@ -44,9 +44,7 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Unsupported attribute "bogus"');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
     it('reports page, block and line for an unknown attribute on an inline Template', async () => {
@@ -63,9 +61,7 @@ describe('parser strictness', () => {
 
       // `input` is a fenced attribute only — inline Templates honour `lang`
       expect(message).toContain('Unsupported attribute "input"');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
     it('reports page, block and line for a global Template without input', async () => {
@@ -83,9 +79,7 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Global directive must have input variables');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
     it('reports page, block and line for append without a file path', async () => {
@@ -103,12 +97,30 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Attribute "append" requires "path"');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
-    it('reports page, config file and the YAML line for a default outside the option set', async () => {
+    it('reports page, block and line when whitespace separates an inline marker from its code span', async () => {
+      const root = await makeDocsTree({
+        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
+        [baseFile('demo', 'index.zh.md')]: [
+          '第一行。',
+          '',
+          '行内模板 {ztmpl} `内容`。',
+        ].join('\n'),
+      });
+
+      const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
+
+      // Author intent is clear there — fail loudly instead of leaking raw
+      // text (spec story 32).
+      expect(message).toContain(
+        'Unexpected whitespace between the inline Template marker and its code span',
+      );
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
+    });
+
+    it('reports page, block and line for a default outside the option set (block names the config source file)', async () => {
       const root = await makeDocsTree({
         [baseFile('demo', 'zh.yaml')]: [
           '_: Demo 页面',
@@ -126,9 +138,7 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Default "ghost" is not an option of input "release"');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('zh.yaml');
-      expect(message).toContain('at line 5');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'zh.yaml'), 5);
     });
 
     it('reports a bad default even when the input is never used in a Template', async () => {
@@ -149,7 +159,7 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Default "ghost" is not an option of input "release"');
-      expect(message).toContain('at line 5');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'zh.yaml'), 5);
     });
 
     it('points at the Site Override config when the bad default comes from there', async () => {
@@ -180,8 +190,7 @@ describe('parser strictness', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Default "ghost" is not an option of input "release"');
-      expect(message).toContain(path.join(root, 'local', 'demo', 'zh.yaml'));
-      expect(message).toContain('at line 5');
+      expectLocatedError(message, 'demo', path.join(root, 'local', 'demo', 'zh.yaml'), 5);
     });
   });
 

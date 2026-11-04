@@ -113,3 +113,22 @@ export interface TextInput extends InputCommon {
 }
 
 export type InputType = Menu | TextInput | BooleanInput;
+
+/**
+ * One discriminant-aware shape over the InputType variants — select menu,
+ * switch, text — each with its own typed case. Shared by the initial-state
+ * builder (template-render) and the input form renderer (InputMenu) so the
+ * `'items' in menu` / `'trueValue' in menu` cascade lives in one place.
+ */
+export function foldInput<T>(
+  menu: InputType,
+  cases: {
+    select: (menu: Menu) => T;
+    switch: (menu: BooleanInput) => T;
+    text: (menu: TextInput) => T;
+  },
+): T {
+  if ('items' in menu) return cases.select(menu);
+  if ('trueValue' in menu) return cases.switch(menu);
+  return cases.text(menu);
+}

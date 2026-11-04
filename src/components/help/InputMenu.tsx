@@ -1,14 +1,15 @@
 import { useState } from 'react';
-import type { InputType, MenuValue } from '@/lib/help/types';
+import { foldInput } from '@/lib/help/types';
+import type { BooleanInput, InputType, MenuValue, TextInput } from '@/lib/help/types';
 
 /**
- * Interactive form for a set of input menus (select / switch / text).
- * Shared by block-local inputs (CodeBlock) and Global Input forms
- * (rendered at `<globalmenu>` placeholders, ADR 0007). The selection
- * values live in the caller's store; only the selected option indices
- * are owned here.
+ * Interactive form for a set of input menus (select / switch / text): the
+ * inputs of a Template (glossary: Template), whether block-local or a Global
+ * Input form (rendered at `<globalmenu>` placeholders, ADR 0007). The
+ * selection values live in the caller's store; only the selected option
+ * indices are owned here.
  */
-export default function CodeBlockMenu({
+export default function InputMenu({
   menus,
   state,
   onChange,
@@ -18,7 +19,7 @@ export default function CodeBlockMenu({
   onChange: (newState: MenuValue) => void;
 }) {
   const [selectedIndices, setSelectedIndices] = useState<number[]>(() =>
-    menus.map((menu) => ('items' in menu ? 0 : -1)),
+    menus.map((menu) => foldInput(menu, { select: () => 0, switch: () => -1, text: () => -1 })),
   );
 
   const handleSelectChange = (
@@ -51,16 +52,11 @@ export default function CodeBlockMenu({
     onChange(newState);
   };
 
-  const handleTextChange = (
-    menu: Extract<InputType, { name: string }>,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
+  const handleTextChange = (menu: TextInput, e: React.ChangeEvent<HTMLInputElement>) => {
     onChange({ ...state, [menu.name]: e.target.value });
   };
 
-  const handleBoolChange = (
-    menu: Extract<InputType, { name: string; trueValue: unknown }>,
-  ) => {
+  const handleBoolChange = (menu: BooleanInput) => {
     const currentVal = state[menu.name];
     const newVal = currentVal === menu.trueValue ? menu.falseValue : menu.trueValue;
     onChange({ ...state, [menu.name]: newVal });
@@ -70,54 +66,49 @@ export default function CodeBlockMenu({
 
   return (
     <div className="codeblock-menus">
-      {menus.map((menu, menuIndex) => {
-        if ('items' in menu) {
-          return (
-            <div className="codeblock-menu" key={menu.title || menuIndex}>
-              <span className="codeblock-menu-label">{menu.title}</span>
+      {menus.map((menu, menuIndex) =>
+        foldInput(menu, {
+          select: (m) => (
+            <div className="codeblock-menu" key={m.title || menuIndex}>
+              <span className="codeblock-menu-label">{m.title}</span>
               <select
                 className="codeblock-select"
                 onChange={(e) => handleSelectChange(menuIndex, e)}
                 defaultValue="0"
               >
-                {menu.items.map(([label], i) => (
+                {m.items.map(([label], i) => (
                   <option key={i} value={i}>
                     {label}
                   </option>
                 ))}
               </select>
             </div>
-          );
-        }
-
-        if ('trueValue' in menu) {
-          return (
-            <div className="codeblock-menu" key={menu.title || menuIndex}>
+          ),
+          switch: (m) => (
+            <div className="codeblock-menu" key={m.title || menuIndex}>
               <label className="codeblock-checkbox-label">
                 <input
                   type="checkbox"
-                  checked={state[menu.name] === menu.trueValue}
-                  onChange={() => handleBoolChange(menu)}
+                  checked={state[m.name] === m.trueValue}
+                  onChange={() => handleBoolChange(m)}
                 />
-                <span>{menu.title}</span>
+                <span>{m.title}</span>
               </label>
             </div>
-          );
-        }
-
-        // Text input
-        return (
-          <div className="codeblock-menu" key={menu.title || menuIndex}>
-            <span className="codeblock-menu-label">{menu.title}</span>
-            <input
-              className="codeblock-text-input"
-              type="text"
-              defaultValue={(menu as { defaultValue?: string }).defaultValue || ''}
-              onChange={(e) => handleTextChange(menu, e)}
-            />
-          </div>
-        );
-      })}
+          ),
+          text: (m) => (
+            <div className="codeblock-menu" key={m.title || menuIndex}>
+              <span className="codeblock-menu-label">{m.title}</span>
+              <input
+                className="codeblock-text-input"
+                type="text"
+                defaultValue={m.defaultValue || ''}
+                onChange={(e) => handleTextChange(m, e)}
+              />
+            </div>
+          ),
+        }),
+      )}
     </div>
   );
 }

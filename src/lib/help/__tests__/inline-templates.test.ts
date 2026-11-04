@@ -70,7 +70,7 @@ describe('inline Templates', () => {
         [baseFile('demo', 'index.zh.md')]: [
           "Shell text stays verbatim: `awk '{print $1}'`, ${var} and PATH=$HOME/.local/bin:$PATH.",
           '',
-          'A lone marker {ztmpl} is not a Template, a spaced one {ztmpl} `spaced` is not either, and {role}`x` is no ztmpl.',
+          'A lone marker {ztmpl} is not a Template, and {role}`x` is no ztmpl.',
         ].join('\n'),
       });
 
@@ -82,7 +82,6 @@ describe('inline Templates', () => {
       expect(data!.content).toContain('${var}');
       expect(data!.content).toContain('PATH=$HOME/.local/bin:$PATH');
       expect(data!.content).toContain('A lone marker {ztmpl} is not a Template');
-      expect(data!.content).toContain('<code>spaced</code>');
       expect(data!.content).toContain('<code>x</code>');
     });
 

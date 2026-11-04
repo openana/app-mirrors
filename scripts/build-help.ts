@@ -23,6 +23,7 @@ async function main() {
   console.log(`Found ${segments.length} help pages`);
 
   const routes: Record<string, { title: string; cname: string }> = {};
+  let failedPages = 0;
 
   for (const segment of segments) {
     const slug = segment.join('/');
@@ -47,6 +48,7 @@ async function main() {
 
       console.log(`    ✓ ${data.meta.title}`);
     } catch (err) {
+      failedPages++;
       console.error(`    ✗ Error: ${(err as Error).message}`);
     }
   }
@@ -79,6 +81,13 @@ async function main() {
 
   await fs.writeFile(path.join(OUTPUT_DIR, 'index.html'), indexContent);
   console.log('Index page generated');
+
+  // Page errors fail the build (spec "Strictness") — every page is still
+  // processed and logged above, only the exit code is fatal now.
+  if (failedPages > 0) {
+    console.error(`Build failed: ${failedPages} page(s) with errors`);
+    process.exit(1);
+  }
 }
 
 main().catch((err) => {

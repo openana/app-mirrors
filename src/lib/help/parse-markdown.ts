@@ -8,7 +8,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { parse as yamlParse } from 'yaml';
+import { LineCounter, parseDocument } from 'yaml';
 import type {
   ZDocConfig,
   ZDocConfigOnDisk,
@@ -31,6 +31,56 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
 }
 
 // ── File loading ────────────────────────────────────────────
+
+/** A parsed YAML config file, with its source kept for located errors. */
+interface LoadedYaml {
+  data: ZDocConfigOnDisk | null;
+  doc: ReturnType<typeof parseDocument>;
+  lineCounter: LineCounter;
+  path: string;
+}
+
+async function readYamlFile(p: string): Promise<LoadedYaml | null> {
+  let content: string;
+  try {
+    content = await fs.readFile(p, 'utf-8');
+  } catch (err) {
+    if (!isErrnoException(err) || err.code !== 'ENOENT') throw err;
+    return null;
+  }
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(content, { lineCounter });
+  if (doc.errors.length > 0) throw doc.errors[0];
+  return { data: doc.toJS() as ZDocConfigOnDisk | null, doc, lineCounter, path: p };
+}
+
+/**
+ * A `default` must be one of the input's options (format contract). The
+ * error carries page, config file and line in the located error style —
+ * the line is the real YAML line of the offending `default`, located via
+ * the `yaml` package's line counter (spec "Strictness").
+ */
+function validateInputDefaults(
+  inputs: Record<string, ZDocInput>,
+  sources: Map<string, LoadedYaml>,
+  page: string,
+): void {
+  for (const [name, input] of Object.entries(inputs)) {
+    if (!('option' in input)) continue;
+    const def = input.default;
+    if (def == null) continue;
+    if (Object.prototype.hasOwnProperty.call(input.option, def)) continue;
+    const source = sources.get(name)!;
+    const node = source.doc.getIn(['input', name, 'default'], true) as
+      | { range?: [number, number, number] }
+      | null
+      | undefined;
+    const line = node?.range ? source.lineCounter.linePos(node.range[0]).line : '?';
+    throw new Error(
+      `Default "${def}" is not an option of input "${name}" on page ${page}, block ${source.path} at line ${line}`,
+    );
+  }
+}
 
 async function loadFile(
   docsDir: string,
@@ -62,25 +112,25 @@ async function loadConf(
   const localPath = path.join(docsDir, 'local', page, `${language}.yaml`);
   const globalPath = path.join(docsDir, 'global', page, `${language}.yaml`);
 
-  const tryReadYaml = async (p: string): Promise<[boolean, ZDocConfigOnDisk | null]> => {
-    try {
-      const content = await fs.readFile(p, 'utf-8');
-      return [true, yamlParse(content) as ZDocConfigOnDisk];
-    } catch (err) {
-      if (!isErrnoException(err) || err.code !== 'ENOENT') throw err;
-      return [false, null];
-    }
-  };
+  const local = await readYamlFile(localPath);
+  const global = await readYamlFile(globalPath);
 
-  const [localExists, localConf] = await tryReadYaml(localPath);
-  const [globalExists, globalConf] = await tryReadYaml(globalPath);
+  if (!local && !global) return null;
 
-  if (!localExists && !globalExists) return null;
+  const localConf = local?.data ?? null;
+  const globalConf = global?.data ?? null;
 
   const inputsGiven = { ...globalConf?.input, ...localConf?.input };
-  const inputs = Object.fromEntries(
-    Object.entries(inputsGiven).filter(([, v]) => v !== null),
-  ) as Record<string, ZDocInput>;
+  const inputs: Record<string, ZDocInput> = {};
+  const inputSources = new Map<string, LoadedYaml>();
+  for (const [name, value] of Object.entries(inputsGiven)) {
+    if (value === null) continue;
+    inputs[name] = value as ZDocInput;
+    // The surviving definition after the merge is the one to blame for it.
+    inputSources.set(name, local && localConf?.input?.[name] != null ? local : global!);
+  }
+
+  validateInputDefaults(inputs, inputSources, page);
 
   const config = {
     block: ['index'],
@@ -113,7 +163,9 @@ export function transpileInput(name: string, input: ZDocInput): InputType {
     const items: [string, MenuValue][] = [];
     const defaultVal = input.default;
 
-    if (defaultVal && input.option[defaultVal]) {
+    // The default is honoured when it names an option, even if that option
+    // carries no entry (its key is then the label).
+    if (defaultVal != null && Object.prototype.hasOwnProperty.call(input.option, defaultVal)) {
       const opt = input.option[defaultVal];
       const title = opt?._ || defaultVal;
       const values: MenuValue = { [name]: defaultVal };

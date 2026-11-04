@@ -56,11 +56,13 @@ export interface ZDocInputCommon {
 
 export interface ZDocInputOptionSelect {
   _?: string;
-  [key: string]: string | undefined;
+  /** Companion variable values; non-string values (e.g. the boolean `sid` flag) are legal and render through mustache sections. */
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface ZDocInputOption extends ZDocInputCommon {
-  option: Record<string, ZDocInputOptionSelect>;
+  /** The option set; a null entry means the key itself serves as the label. */
+  option: Record<string, ZDocInputOptionSelect | null>;
   default?: string;
 }
 
@@ -77,7 +79,7 @@ export interface ZDocInputText extends ZDocInputCommon {
 export type ZDocInput = ZDocInputOption | ZDocInputBool | ZDocInputText;
 
 export interface MenuValue {
-  [key: string]: string | boolean;
+  [key: string]: string | number | boolean | null;
 }
 
 export interface InputCommon {

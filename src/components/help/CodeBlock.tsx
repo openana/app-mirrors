@@ -2,7 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import type { InputType, MenuValue } from '@/lib/help/types';
 import { createInitialState, renderTemplate } from '@/lib/help/template-render';
 import { highlightCode } from '@/lib/help/highlight';
-import CodeBlockMenu from './CodeBlockMenu';
+import InputMenu from './InputMenu';
 
 interface CodeBlockProps {
   templateId: string;
@@ -68,7 +68,7 @@ export default function CodeBlock({
   return (
     <div className="codeblock-container">
       {menus.length > 0 && (
-        <CodeBlockMenu
+        <InputMenu
           menus={menus}
           state={menuState}
           onChange={setMenuState}

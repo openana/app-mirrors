@@ -2,13 +2,13 @@ import { useState } from 'react';
 import type { InputType, MenuValue } from '@/lib/help/types';
 
 /**
- * Interactive form for a set of input menus (select / switch / text).
- * Shared by block-local inputs (CodeBlock) and Global Input forms
- * (rendered at `<globalmenu>` placeholders, ADR 0007). The selection
- * values live in the caller's store; only the selected option indices
- * are owned here.
+ * Interactive form for a set of input menus (select / switch / text): the
+ * inputs of a Template (glossary: Template), whether block-local or a Global
+ * Input form (rendered at `<globalmenu>` placeholders, ADR 0007). The
+ * selection values live in the caller's store; only the selected option
+ * indices are owned here.
  */
-export default function CodeBlockMenu({
+export default function InputMenu({
   menus,
   state,
   onChange,

@@ -9,7 +9,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import CodeBlock from '@/components/help/CodeBlock';
-import CodeBlockMenu from '@/components/help/CodeBlockMenu';
+import InputMenu from '@/components/help/InputMenu';
 import CodeInline, { type CodeInlineProps } from '@/components/help/CodeInline';
 import HelpNav from '@/components/help/HelpNav';
 import {
@@ -255,7 +255,7 @@ function HelpContent({
           const form = globalFormMap.get(seg.id);
           if (!form) return null;
           return (
-            <CodeBlockMenu
+            <InputMenu
               key={seg.id}
               menus={form.menus}
               state={globalState[seg.id] ?? {}}

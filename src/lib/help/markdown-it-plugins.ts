@@ -11,6 +11,7 @@ import type { StateCore } from 'markdown-it';
 import GithubSlugger from 'github-slugger';
 import type { ZDocInput, InputType, ToC, GlobalForm } from './types';
 import { locatedError } from './errors';
+import { blockPlaceholder, inlinePlaceholder, placeholderId } from './placeholders';
 import { transpileInput } from './parse-markdown';
 
 // ── Shared types ────────────────────────────────────────────
@@ -281,11 +282,11 @@ export function createZdocParser(
         // A global="true" Template renders its form at this position; its
         // body is ignored (format spec). Global without input is rejected
         // above.
-        const formId = `globalmenu-${globalFormCounter++}`;
+        const formId = placeholderId('globalmenu', globalFormCounter++);
         globalForms.push({ id: formId, menus: menusOrError });
-        placeholder = `<globalmenu id="${formId}" />`;
+        placeholder = blockPlaceholder('globalmenu', formId);
       } else {
-        const blockId = `codeblock-${codeBlockCounter++}`;
+        const blockId = placeholderId('codeblock', codeBlockCounter++);
         codeBlocks.push({
           id: blockId,
           template: token.content.trimEnd(),
@@ -294,7 +295,7 @@ export function createZdocParser(
           filepath: attrs.path,
           append: attrs.append,
         });
-        placeholder = `<codeblock id="${blockId}" />`;
+        placeholder = blockPlaceholder('codeblock', blockId);
       }
 
       // Mutate the fence token into an html_block placeholder
@@ -335,7 +336,7 @@ export function createZdocParser(
           const line = token.map ? token.map[0] + 1 : '?';
           throw locatedError(pageId, blockPath, line, `Unsupported attribute "${unsupported}"`);
         }
-        const id = `codeinline-${inlineTemplateCounter++}`;
+        const id = placeholderId('codeinline', inlineTemplateCounter++);
         inlineTemplates.push({ id, template: code.content, lang: attrs.lang });
 
         text.content = text.content.slice(0, -m[0].length);
@@ -345,7 +346,7 @@ export function createZdocParser(
         code.nesting = 0;
         code.markup = '';
         code.info = '';
-        code.content = `<codeinline id="${id}"></codeinline>`;
+        code.content = inlinePlaceholder(id);
         code.children = null;
       }
     }

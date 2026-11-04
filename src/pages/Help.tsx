@@ -19,23 +19,27 @@ import {
 import { mirrorSites } from '@/config/mirror-sites';
 import { useTranslation } from '@/i18n';
 import type { HelpPageData, InlineTemplate, MenuValue } from '@/lib/help/types';
+import {
+  blockPlaceholderRegex,
+  INLINE_PLACEHOLDER_SELECTOR,
+  type BlockPlaceholderKind,
+} from '@/lib/help/placeholders';
 import { createInitialState } from '@/lib/help/template-render';
 import type { TemplateRenderContext } from '@/lib/help/template-render';
 
 type ContentSegment =
   | { type: 'html'; content: string }
-  | { type: 'codeblock'; id: string }
-  | { type: 'globalmenu'; id: string };
+  | { type: BlockPlaceholderKind; id: string };
 
 /**
- * Splits HTML content at <codeblock id="..." /> and <globalmenu id="..." />
- * tags and returns an array of segments: { type: 'html', content } or
- * { type: 'codeblock' | 'globalmenu', id }.
+ * Splits HTML content at block placeholder tags (see
+ * `@/lib/help/placeholders`) and returns an array of segments:
+ * { type: 'html', content } or { type: '<block kind>', id }.
  */
 function splitContentAtPlaceholders(html: string): ContentSegment[] {
   const parts: ContentSegment[] = [];
 
-  const regex = /<(codeblock|globalmenu)\s+id="([^"]+)"\s*\/>/g;
+  const regex = blockPlaceholderRegex();
   let lastIndex = 0;
   let match;
 
@@ -44,7 +48,7 @@ function splitContentAtPlaceholders(html: string): ContentSegment[] {
       parts.push({ type: 'html', content: html.slice(lastIndex, match.index) });
     }
     if (match[2]) {
-      parts.push({ type: match[1] as 'codeblock' | 'globalmenu', id: match[2] });
+      parts.push({ type: match[1] as BlockPlaceholderKind, id: match[2] });
     }
     lastIndex = regex.lastIndex;
   }
@@ -98,7 +102,7 @@ function ContentHtml({
     const root = ref.current;
     if (!root) return;
     setTargets(
-      Array.from(root.querySelectorAll<HTMLElement>('codeinline[id]')).map(
+      Array.from(root.querySelectorAll<HTMLElement>(INLINE_PLACEHOLDER_SELECTOR)).map(
         (node) => ({ id: node.getAttribute('id')!, node }),
       ),
     );

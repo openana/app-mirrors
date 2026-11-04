@@ -21,6 +21,8 @@ export interface HelpPageData {
   meta: {
     title: string;
     cname: string;
+    /** Config `filter` (spec "Protocol enforcement"): page-wide scheme enforcement. */
+    filter?: ZDocFilter;
   };
   compiledTemplates: Record<string, string>;
   codeBlocks: Array<{
@@ -40,6 +42,12 @@ export interface ZDocConfigOnDisk {
   _?: string; // Title
   block?: string[];
   input?: Record<string, ZDocInput | null>;
+  filter?: ZDocFilter | null;
+}
+
+/** Config `filter` (spec "Protocol enforcement"): a filtered page forces the chosen scheme everywhere. */
+export interface ZDocFilter {
+  scheme?: string;
 }
 
 export interface ZDocConfig {
@@ -47,6 +55,7 @@ export interface ZDocConfig {
   _: string; // Title
   block: string[];
   input: Record<string, ZDocInput>;
+  filter?: ZDocFilter | null;
 }
 
 export interface ZDocInputCommon {

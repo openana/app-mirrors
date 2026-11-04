@@ -8,7 +8,7 @@
 import MarkdownIt from 'markdown-it';
 import type { StateCore } from 'markdown-it';
 import GithubSlugger from 'github-slugger';
-import type { ZDocInput, InputType, ToC } from './types';
+import type { ZDocInput, InputType, ToC, GlobalForm } from './types';
 import { transpileInput } from './parse-markdown';
 
 // ── Shared types ────────────────────────────────────────────
@@ -29,6 +29,7 @@ interface ZtmplAttrs {
   path?: string;
   input?: string;
   append?: boolean;
+  global?: boolean;
 }
 
 function parseZtmplAttrs(info: string): ZtmplAttrs {
@@ -42,6 +43,7 @@ function parseZtmplAttrs(info: string): ZtmplAttrs {
     else if (key === 'path') attrs.path = val;
     else if (key === 'input') attrs.input = val;
     else if (key === 'append') attrs.append = val === 'true';
+    else if (key === 'global') attrs.global = val === 'true';
   }
   return attrs;
 }
@@ -151,6 +153,7 @@ function headingIdRule(
 export interface MarkdownItPluginResult {
   toc: ToC[];
   codeBlocks: ExtractedCodeBlock[];
+  globalForms: GlobalForm[];
 }
 
 /**
@@ -162,10 +165,13 @@ export function createZdocParser(
   pageId: string,
   blockPath: string | null,
   startCounter: number = 0,
+  startGlobalCounter: number = 0,
 ): { md: InstanceType<typeof MarkdownIt>; result: MarkdownItPluginResult } {
   const toc: ToC[] = [];
   const codeBlocks: ExtractedCodeBlock[] = [];
+  const globalForms: GlobalForm[] = [];
   let counter = startCounter;
+  let globalCounter = startGlobalCounter;
 
   const md = new MarkdownIt({ html: true }).enable('table');
 
@@ -195,7 +201,6 @@ export function createZdocParser(
       if (!info.startsWith('{ztmpl')) continue;
 
       const attrs = parseZtmplAttrs(info);
-      const blockId = `codeblock-${counter++}`;
 
       // Build menus from input attribute
       const menusOrError = transpileInputToMenuValue(attrs.input, inputDefs);
@@ -206,14 +211,26 @@ export function createZdocParser(
         );
       }
 
-      codeBlocks.push({
-        id: blockId,
-        template: token.content.trimEnd(),
-        menus: menusOrError,
-        lang: attrs.lang,
-        filepath: attrs.path,
-        append: attrs.append,
-      });
+      let placeholder: string;
+      if (attrs.global) {
+        // A global="true" Template renders its form at this position; its
+        // body is ignored (format spec). The located error for global
+        // without input lands in ticket 07 — it parses here.
+        const formId = `globalmenu-${globalCounter++}`;
+        globalForms.push({ id: formId, menus: menusOrError });
+        placeholder = `<globalmenu id="${formId}" />`;
+      } else {
+        const blockId = `codeblock-${counter++}`;
+        codeBlocks.push({
+          id: blockId,
+          template: token.content.trimEnd(),
+          menus: menusOrError,
+          lang: attrs.lang,
+          filepath: attrs.path,
+          append: attrs.append,
+        });
+        placeholder = `<codeblock id="${blockId}" />`;
+      }
 
       // Mutate the fence token into an html_block placeholder
       token.type = 'html_block';
@@ -221,7 +238,7 @@ export function createZdocParser(
       token.nesting = 0;
       token.markup = '';
       token.info = '';
-      token.content = `<codeblock id="${blockId}" />\n`;
+      token.content = `${placeholder}\n`;
       token.children = null;
       token.block = true;
     }
@@ -229,5 +246,5 @@ export function createZdocParser(
     return true;
   });
 
-  return { md, result: { toc, codeBlocks } };
+  return { md, result: { toc, codeBlocks, globalForms } };
 }

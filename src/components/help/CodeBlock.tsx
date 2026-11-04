@@ -9,6 +9,7 @@ import 'prismjs/components/prism-python';
 import 'prismjs/components/prism-yaml';
 import type { InputType, MenuValue } from '@/lib/help/types';
 import { createInitialState, renderTemplate } from '@/lib/help/template-render';
+import CodeBlockMenu from './CodeBlockMenu';
 
 interface CodeBlockProps {
   templateId: string;
@@ -22,116 +23,8 @@ interface CodeBlockProps {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
-}
-
-function CodeBlockMenu({
-  menus,
-  state,
-  onChange,
-  selectedIndices,
-  onSelectChange,
-}: {
-  menus: InputType[];
-  state: MenuValue;
-  onChange: (newState: MenuValue) => void;
-  selectedIndices: number[];
-  onSelectChange: (menuIndex: number, itemIndex: number) => void;
-}) {
-  const handleSelectChange = (
-    menuIndex: number,
-    e: React.ChangeEvent<HTMLSelectElement>,
-  ) => {
-    const newItemIndex = Number.parseInt(e.target.value, 10);
-    const menu = menus[menuIndex];
-    if (!menu || !('items' in menu)) return;
-
-    // Remove keys from the old item's values
-    const oldItemIndex = selectedIndices[menuIndex] ?? 0;
-    const [, oldValues] = menu.items[oldItemIndex] || [];
-    const newState = { ...state };
-    if (oldValues) {
-      for (const key of Object.keys(oldValues)) {
-        delete newState[key];
-      }
-    }
-
-    // Add the new item's values
-    const [, newValues] = menu.items[newItemIndex] || [];
-    if (newValues) Object.assign(newState, newValues);
-
-    onSelectChange(menuIndex, newItemIndex);
-    onChange(newState);
-  };
-
-  const handleTextChange = (
-    menu: Extract<InputType, { name: string }>,
-    e: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    onChange({ ...state, [menu.name]: e.target.value });
-  };
-
-  const handleBoolChange = (
-    menu: Extract<InputType, { name: string; trueValue: unknown }>,
-  ) => {
-    const currentVal = state[menu.name];
-    const newVal = currentVal === menu.trueValue ? menu.falseValue : menu.trueValue;
-    onChange({ ...state, [menu.name]: newVal });
-  };
-
-  if (menus.length === 0) return null;
-
-  return (
-    <div className="codeblock-menus">
-      {menus.map((menu, menuIndex) => {
-        if ('items' in menu) {
-          return (
-            <div className="codeblock-menu" key={menu.title || menuIndex}>
-              <span className="codeblock-menu-label">{menu.title}</span>
-              <select
-                className="codeblock-select"
-                onChange={(e) => handleSelectChange(menuIndex, e)}
-                defaultValue="0"
-              >
-                {menu.items.map(([label], i) => (
-                  <option key={i} value={i}>
-                    {label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          );
-        }
-
-        if ('trueValue' in menu) {
-          return (
-            <div className="codeblock-menu" key={menu.title || menuIndex}>
-              <label className="codeblock-checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={state[menu.name] === menu.trueValue}
-                  onChange={() => handleBoolChange(menu)}
-                />
-                <span>{menu.title}</span>
-              </label>
-            </div>
-          );
-        }
-
-        // Text input
-        return (
-          <div className="codeblock-menu" key={menu.title || menuIndex}>
-            <span className="codeblock-menu-label">{menu.title}</span>
-            <input
-              className="codeblock-text-input"
-              type="text"
-              defaultValue={(menu as { defaultValue?: string }).defaultValue || ''}
-              onChange={(e) => handleTextChange(menu, e)}
-            />
-          </div>
-        );
-      })}
-    </div>
-  );
+  /** Page-level Global Input selections (ADR 0007). */
+  globals?: Record<string, MenuValue>;
 }
 
 export default function CodeBlock({
@@ -144,24 +37,26 @@ export default function CodeBlock({
   cname,
   sudoEnabled = false,
   httpsEnabled = true,
+  globals,
 }: CodeBlockProps) {
   const [menuState, setMenuState] = useState<MenuValue>(() =>
     createInitialState(menus),
-  );
-  const [selectedIndices, setSelectedIndices] = useState<number[]>(() =>
-    menus.map((menu) => ('items' in menu ? 0 : -1)),
   );
   const [copied, setCopied] = useState(false);
 
   const renderedCode = useMemo(
     () =>
-      renderTemplate(compiledTemplates[templateId], menuState, {
-        host,
-        cname,
-        sudoEnabled,
-        httpsEnabled,
-      }),
-    [templateId, compiledTemplates, menuState, host, cname, sudoEnabled, httpsEnabled],
+      renderTemplate(
+        compiledTemplates[templateId],
+        { block: menuState, globals },
+        {
+          host,
+          cname,
+          sudoEnabled,
+          httpsEnabled,
+        },
+      ),
+    [templateId, compiledTemplates, menuState, globals, host, cname, sudoEnabled, httpsEnabled],
   );
 
   const highlightedCode = useMemo(() => {
@@ -190,14 +85,6 @@ export default function CodeBlock({
           menus={menus}
           state={menuState}
           onChange={setMenuState}
-          selectedIndices={selectedIndices}
-          onSelectChange={(menuIndex, itemIndex) => {
-            setSelectedIndices((prev) => {
-              const next = [...prev];
-              next[menuIndex] = itemIndex;
-              return next;
-            });
-          }}
         />
       )}
       <div className="codeblock-wrapper">

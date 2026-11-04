@@ -6,8 +6,7 @@
  * CodeBlock.tsx so the component is a thin caller and the variable
  * resolution is testable without a DOM.
  *
- * No behaviour change (spec ticket 01 is a characterization prefactor):
- * known gaps such as `path` always rendering empty are locked by tests
+ * Known gaps such as `path` always rendering empty are locked by tests
  * and fixed in later tickets (04–08).
  */
 
@@ -22,6 +21,17 @@ export interface TemplateRenderSettings {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
+}
+
+/**
+ * The reader's selections feeding one Template render (ADR 0007).
+ * Resolution order: block inputs < Global Inputs < built-ins.
+ */
+export interface TemplateSelection {
+  /** Block-local input selections (from the block's `input` attribute). */
+  block?: MenuValue;
+  /** Page-level Global Input selections, keyed by form id. */
+  globals?: Record<string, MenuValue>;
 }
 
 /**
@@ -46,14 +56,15 @@ export function createInitialState(menus: InputType[]): MenuValue {
 /**
  * Render a raw mustache Template to text.
  *
- * `selection` holds the reader's input values (block-local today, page-level
- * per ADR 0007 later). Built-ins always win over colliding selection keys.
- * A missing template renders '(template not found)'; a template Hogan cannot
- * compile falls back to the raw template text.
+ * `selection` holds the reader's input values: block-local inputs and the
+ * page-level Global Input store (ADR 0007). Precedence is block inputs <
+ * Global Inputs < built-ins — the built-ins always win over colliding keys
+ * from any form. A missing template renders '(template not found)'; a
+ * template Hogan cannot compile falls back to the raw template text.
  */
 export function renderTemplate(
   rawTemplate: string | undefined,
-  selection: MenuValue,
+  selection: TemplateSelection,
   settings: TemplateRenderSettings = {},
 ): string {
   if (!rawTemplate) return '(template not found)';
@@ -65,8 +76,15 @@ export function renderTemplate(
     const endpoint = host
       ? `${scheme}://${host}${cname ? `/${cname}` : ''}`
       : '(no mirror selected)';
+    // Every Global Input form shares one page-level store; merge all forms
+    // (like the reference consumer) so any form drives every Template.
+    const globalValues = Object.values(selection.globals ?? {}).reduce<MenuValue>(
+      (acc, values) => ({ ...acc, ...values }),
+      {},
+    );
     const vars: MenuValue = {
-      ...selection,
+      ...selection.block,
+      ...globalValues,
       endpoint,
       host: host || '(no mirror selected)',
       // Known gap (spec ticket 04): `path` is always empty instead of `/${cname}`.

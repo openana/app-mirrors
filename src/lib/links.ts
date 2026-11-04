@@ -7,6 +7,6 @@
  * Link target for a mirror: `/{cname}/` for every mirror. A Git Mirror's `.git`
  * suffix is part of the cname and carries no URL semantics (CONTEXT.md).
  */
-export function mirrorHref(name: string): string {
-  return `/${name}/`;
+export function mirrorHref(cname: string): string {
+  return `/${cname}/`;
 }

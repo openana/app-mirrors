@@ -142,6 +142,28 @@ describe('template render seam', () => {
     });
   });
 
+  describe('filter scheme enforcement (spec "Protocol enforcement")', () => {
+    it('forces https URLs regardless of the HTTPS toggle on a filter: scheme: https page', () => {
+      expect(
+        renderTemplate('{{scheme}}|{{http_protocol}}|{{endpoint}}', {}, {
+          ...settings,
+          httpsEnabled: false,
+          forcedScheme: 'https',
+        }),
+      ).toBe('https|https://|https://mirrors.example.edu.cn/demo');
+    });
+
+    it('forces the chosen scheme in both directions (any filter.scheme, not just https)', () => {
+      expect(
+        renderTemplate('{{scheme}}|{{http_protocol}}|{{endpoint}}', {}, {
+          ...settings,
+          httpsEnabled: true,
+          forcedScheme: 'http',
+        }),
+      ).toBe('http|http://|http://mirrors.example.edu.cn/demo');
+    });
+  });
+
   describe('selection store', () => {
     it('pre-selects the first option, switch defaults and text defaults', () => {
       const menus: InputType[] = [

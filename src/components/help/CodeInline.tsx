@@ -12,6 +12,8 @@ export interface CodeInlineProps {
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;
+  /** Page config `filter.scheme` (spec "Protocol enforcement"): forces the scheme regardless of the toggle. */
+  forcedScheme?: string;
   /** Page-level Global Input selections (ADR 0007). */
   globals?: Record<string, MenuValue>;
 }
@@ -31,12 +33,13 @@ export default function CodeInline({
   cname,
   sudoEnabled = false,
   httpsEnabled = true,
+  forcedScheme,
   globals,
 }: CodeInlineProps) {
   const rendered = renderTemplate(
     compiledTemplates[templateId],
     { globals },
-    { host, cname, sudoEnabled, httpsEnabled },
+    { host, cname, sudoEnabled, httpsEnabled, forcedScheme },
   );
   return (
     <code

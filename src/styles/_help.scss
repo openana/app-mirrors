@@ -276,11 +276,22 @@
     accent-color: var(--accent);
     width: 16px;
     height: 16px;
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
   }
 
   &:hover {
     color: var(--text);
   }
+}
+
+.help-toggle-hint {
+  color: var(--text-faint);
+  font-size: 12px;
+  white-space: nowrap;
 }
 
 // Codeblock component styles

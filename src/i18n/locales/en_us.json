@@ -72,7 +72,8 @@
     "selectPage": "Select a page from the sidebar to get started.",
     "pageNotFound": "Page not found: {page}",
     "tocTitle": "On this page",
-    "domain": "Domain"
+    "domain": "Domain",
+    "schemeOnlyHint": "This project is only served over {scheme}"
   },
   "time": {
     "justNow": "just now",

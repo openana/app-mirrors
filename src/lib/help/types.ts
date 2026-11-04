@@ -4,12 +4,25 @@ export interface ToC {
   depth: number;
 }
 
+export interface GlobalForm {
+  id: string;
+  menus: InputType[];
+}
+
+/** An inline Template (a `{ztmpl …}` marker followed by a code span), placed via `<codeinline id>` in content. */
+export interface InlineTemplate {
+  id: string;
+  lang?: string;
+}
+
 export interface HelpPageData {
   toc: ToC[];
   content: string;
   meta: {
     title: string;
     cname: string;
+    /** Config `filter` (spec "Protocol enforcement"): page-wide scheme enforcement. */
+    filter?: ZDocFilter;
   };
   compiledTemplates: Record<string, string>;
   codeBlocks: Array<{
@@ -19,12 +32,22 @@ export interface HelpPageData {
     filepath?: string;
     append?: boolean;
   }>;
+  /** Global Input forms (ADR 0007), placed via `<globalmenu id>` in content. */
+  globalForms: GlobalForm[];
+  /** Inline Templates (spec "Inline Templates"), placed via `<codeinline id>` in content. */
+  inlineTemplates: InlineTemplate[];
 }
 
 export interface ZDocConfigOnDisk {
   _?: string; // Title
   block?: string[];
   input?: Record<string, ZDocInput | null>;
+  filter?: ZDocFilter | null;
+}
+
+/** Config `filter` (spec "Protocol enforcement"): a filtered page forces the chosen scheme everywhere. */
+export interface ZDocFilter {
+  scheme?: string;
 }
 
 export interface ZDocConfig {
@@ -32,6 +55,7 @@ export interface ZDocConfig {
   _: string; // Title
   block: string[];
   input: Record<string, ZDocInput>;
+  filter?: ZDocFilter | null;
 }
 
 export interface ZDocInputCommon {
@@ -41,11 +65,13 @@ export interface ZDocInputCommon {
 
 export interface ZDocInputOptionSelect {
   _?: string;
-  [key: string]: string | undefined;
+  /** Companion variable values; non-string values (e.g. the boolean `sid` flag) are legal and render through mustache sections. */
+  [key: string]: string | number | boolean | null | undefined;
 }
 
 export interface ZDocInputOption extends ZDocInputCommon {
-  option: Record<string, ZDocInputOptionSelect>;
+  /** The option set; a null entry means the key itself serves as the label. */
+  option: Record<string, ZDocInputOptionSelect | null>;
   default?: string;
 }
 
@@ -62,7 +88,7 @@ export interface ZDocInputText extends ZDocInputCommon {
 export type ZDocInput = ZDocInputOption | ZDocInputBool | ZDocInputText;
 
 export interface MenuValue {
-  [key: string]: string | boolean;
+  [key: string]: string | number | boolean | null;
 }
 
 export interface InputCommon {
@@ -87,3 +113,22 @@ export interface TextInput extends InputCommon {
 }
 
 export type InputType = Menu | TextInput | BooleanInput;
+
+/**
+ * One discriminant-aware shape over the InputType variants — select menu,
+ * switch, text — each with its own typed case. Shared by the initial-state
+ * builder (template-render) and the input form renderer (InputMenu) so the
+ * `'items' in menu` / `'trueValue' in menu` cascade lives in one place.
+ */
+export function foldInput<T>(
+  menu: InputType,
+  cases: {
+    select: (menu: Menu) => T;
+    switch: (menu: BooleanInput) => T;
+    text: (menu: TextInput) => T;
+  },
+): T {
+  if ('items' in menu) return cases.select(menu);
+  if ('trueValue' in menu) return cases.switch(menu);
+  return cases.text(menu);
+}

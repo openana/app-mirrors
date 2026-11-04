@@ -44,11 +44,43 @@ The elapsed time since a mirror's last update. A large value means old content r
 _Avoid_: staleness, freshness
 
 **Help Doc**:
-Per-mirror usage documentation stored in `mirrorz-docs` as YAML config + MDX content. Each doc has a title, ordered content blocks, and optional input variables for interactive code examples.
+Per-mirror usage documentation stored in `./zdoc` as YAML config + Markdown content. Each doc has a title, ordered content blocks, and optional input variables for interactive code examples.
 _Avoid_: guide, tutorial, manual
 
 **Content Block**:
-A named section within a help doc (e.g., `index`, `ubuntu`). Blocks can be overridden per-site in `mirrorz-docs/site/<SiteAbbr>/`.
+A named section within a help doc (e.g., `index`, `ubuntu`). A Content Block can be shadowed or extended by a Site Override.
+
+**Base Docs**:
+The upstream help-doc content in `zdoc/global/` (the mirrorz-docs git submodule): one directory per mirror, each holding `<lang>.yaml` configs and `<block>.<lang>.md` content.
+_Avoid_: global docs (collides with Global Input), upstream docs (collides with Upstream)
+
+**Site Override**:
+A per-deployment help-doc page or Content Block in `zdoc/local/` that shadows or extends the Base Docs entry of the same name. A page may exist only as a Site Override.
+_Avoid_: local docs, site configs
+
+**Template**:
+A `{ztmpl}` block (fenced or inline) whose Mustache content renders into an interactive code example.
+_Avoid_: code block (a Template looks like a code block but renders per input)
+
+**Template Variable**:
+A `{{name}}` placeholder inside a Template, resolved from input variables, Global Inputs, or the built-ins (`scheme`, `host`, `path`, `endpoint`, `sudo`).
+_Avoid_: placeholder, mustache variable
+
+**Global Input**:
+An input introduced by a `global="true"` Template: its form appears at that spot in the document and its variables apply to every Template in the Help Doc.
+_Avoid_: global variable, shared input
+
+**Mirror Endpoint URL**:
+The `{{endpoint}}` Template Variable: the base URL of the mirror's directory for this Help Doc, `{{scheme}}://{{host}}{{path}}`.
+_Avoid_: endpoint (ambiguous), base URL
+
+**Host**:
+The mirror's domain name, the `{{host}}` Template Variable (e.g. `mirrors.xjtu.edu.cn`).
+_Avoid_: endpoint, server
+
+**Git Mirror**:
+A mirror whose cname ends in `.git`, served as a git repository. Its URL shape is identical to any other mirror's; the `.git` suffix carries no URL semantics.
+_Avoid_: git repo (a Git Mirror contains one)
 
 **News Post**:
 A time-stamped announcement with MDX content. Stored as date-prefixed directories under `content/news/`.
@@ -63,3 +95,15 @@ _Avoid_: ISO page, download page
 **Pre-render**:
 Build-time process that generates static HTML files for specific routes (help docs) by rendering the SPA shell + content into HTML. Ensures SEO crawlers see real content rather than an empty SPA shell.
 _Avoid_: SSG, static generation (ambiguous — pre-render is specific to help docs only)
+
+## Help doc storage
+
+Help docs live in `./zdoc`:
+
+```
+./zdoc/
+├── global/   # Base Docs — the mirrorz-docs git submodule
+└── local/    # Site Overrides — this deployment's additions and overrides
+```
+
+Note the name overlap: the `global/` directory means "base docs tree" and is unrelated to Global Inputs (the `global="true"` Template attribute). See ADR 0007 for how Global Inputs are wired through rendering.

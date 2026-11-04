@@ -1,7 +1,10 @@
 // Custom Prism.js theme matching the app's color scheme
 @use 'fonts' as *;
 
-.codeblock-pre {
+// Token colors cover both fenced code (`.codeblock-pre`) and inline Templates'
+// highlighted code spans (spec "Inline Templates", `lang`).
+.codeblock-pre,
+.help-content code[class*='language-'] {
   code[class*="language-"],
   pre[class*="language-"] {
     color: var(--text);
@@ -172,7 +175,8 @@
 }
 
 // Explicit dark theme
-:root[data-theme="dark"] .codeblock-pre {
+:root[data-theme="dark"] .codeblock-pre,
+:root[data-theme="dark"] .help-content code[class*='language-'] {
   .token.comment,
   .token.prolog,
   .token.doctype,

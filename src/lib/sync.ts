@@ -106,11 +106,6 @@ function compareByAge(a: SyncRow, b: SyncRow): number {
   return a.name.localeCompare(b.name);
 }
 
-/** Link target for a mirror, git-aware like the Mirrors page (Q9). */
-export function mirrorHref(name: string): string {
-  return name.endsWith('.git') ? `/git/${name}/` : `/${name}/`;
-}
-
 /** Duration like `28m`, `2h 5m`, `3d 4h` (language-neutral units). */
 export function formatDuration(s: number): string {
   if (s < 60) return `${Math.round(s)}s`;

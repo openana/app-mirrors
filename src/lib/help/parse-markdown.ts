@@ -8,7 +8,7 @@
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import { parse as yamlParse } from 'yaml';
+import { LineCounter, parseDocument } from 'yaml';
 import type {
   ZDocConfig,
   ZDocConfigOnDisk,
@@ -16,9 +16,17 @@ import type {
   MenuValue,
   InputType,
   HelpPageData,
+  GlobalForm,
+  InlineTemplate,
   ToC,
 } from './types';
-import { createZdocParser, type ExtractedCodeBlock } from './markdown-it-plugins';
+import {
+  createZdocParser,
+  type ExtractedCodeBlock,
+  type ExtractedInlineTemplate,
+  type ParserCounters,
+} from './markdown-it-plugins';
+import { locatedError } from './errors';
 
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
@@ -26,16 +34,71 @@ function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
 
 // ── File loading ────────────────────────────────────────────
 
+/** A parsed YAML config file, with its source kept for located errors. */
+interface LoadedYaml {
+  data: ZDocConfigOnDisk | null;
+  doc: ReturnType<typeof parseDocument>;
+  lineCounter: LineCounter;
+  path: string;
+}
+
+async function readYamlFile(p: string): Promise<LoadedYaml | null> {
+  let content: string;
+  try {
+    content = await fs.readFile(p, 'utf-8');
+  } catch (err) {
+    if (!isErrnoException(err) || err.code !== 'ENOENT') throw err;
+    return null;
+  }
+  const lineCounter = new LineCounter();
+  const doc = parseDocument(content, { lineCounter });
+  if (doc.errors.length > 0) throw doc.errors[0];
+  return { data: doc.toJS() as ZDocConfigOnDisk | null, doc, lineCounter, path: p };
+}
+
+/**
+ * A `default` must be one of the input's options (format contract). The
+ * error carries page, config file and line in the located error style —
+ * the line is the real YAML line of the offending `default`, located via
+ * the `yaml` package's line counter (spec "Strictness").
+ */
+function validateInputDefaults(
+  inputs: Record<string, ZDocInput>,
+  sources: Map<string, LoadedYaml>,
+  page: string,
+): void {
+  for (const [name, input] of Object.entries(inputs)) {
+    if (!('option' in input)) continue;
+    const def = input.default;
+    if (def == null) continue;
+    if (Object.prototype.hasOwnProperty.call(input.option, def)) continue;
+    const source = sources.get(name)!;
+    const node = source.doc.getIn(['input', name, 'default'], true) as
+      | { range?: [number, number, number] }
+      | null
+      | undefined;
+    const line = node?.range ? source.lineCounter.linePos(node.range[0]).line : '?';
+    throw locatedError(
+      page,
+      source.path,
+      line,
+      `Default "${def}" is not an option of input "${name}"`,
+    );
+  }
+}
+
 async function loadFile(
   docsDir: string,
   page: string,
   file: string,
   defaultValue?: string,
 ): Promise<{ path: string | null; content: string }> {
+  // On-disk tree names keep their historical spelling (CONTEXT.md "Help
+  // doc storage"): `local/` is Site Overrides, `global/` is Base Docs.
   const localPath = path.join(docsDir, 'local', page, file);
-  const globalPath = path.join(docsDir, page, file);
+  const basePath = path.join(docsDir, 'global', page, file);
 
-  for (const p of [localPath, globalPath]) {
+  for (const p of [localPath, basePath]) {
     try {
       return { path: p, content: await fs.readFile(p, 'utf-8') };
     } catch (err) {
@@ -54,31 +117,31 @@ async function loadConf(
   language: string,
 ): Promise<ZDocConfig | null> {
   const localPath = path.join(docsDir, 'local', page, `${language}.yaml`);
-  const globalPath = path.join(docsDir, page, `${language}.yaml`);
+  const basePath = path.join(docsDir, 'global', page, `${language}.yaml`);
 
-  const tryReadYaml = async (p: string): Promise<[boolean, ZDocConfigOnDisk | null]> => {
-    try {
-      const content = await fs.readFile(p, 'utf-8');
-      return [true, yamlParse(content) as ZDocConfigOnDisk];
-    } catch (err) {
-      if (!isErrnoException(err) || err.code !== 'ENOENT') throw err;
-      return [false, null];
-    }
-  };
+  const local = await readYamlFile(localPath);
+  const base = await readYamlFile(basePath);
 
-  const [localExists, localConf] = await tryReadYaml(localPath);
-  const [globalExists, globalConf] = await tryReadYaml(globalPath);
+  if (!local && !base) return null;
 
-  if (!localExists && !globalExists) return null;
+  const localConf = local?.data ?? null;
+  const baseConf = base?.data ?? null;
 
-  const inputsGiven = { ...globalConf?.input, ...localConf?.input };
-  const inputs = Object.fromEntries(
-    Object.entries(inputsGiven).filter(([, v]) => v !== null),
-  ) as Record<string, ZDocInput>;
+  const inputsGiven = { ...baseConf?.input, ...localConf?.input };
+  const inputs: Record<string, ZDocInput> = {};
+  const inputSources = new Map<string, LoadedYaml>();
+  for (const [name, value] of Object.entries(inputsGiven)) {
+    if (value === null) continue;
+    inputs[name] = value as ZDocInput;
+    // The surviving definition after the merge is the one to blame for it.
+    inputSources.set(name, local && localConf?.input?.[name] != null ? local : base!);
+  }
+
+  validateInputDefaults(inputs, inputSources, page);
 
   const config = {
     block: ['index'],
-    ...globalConf,
+    ...baseConf,
     ...localConf,
     input: inputs,
     name: page,
@@ -91,16 +154,6 @@ async function loadConf(
   return { _: config._!, ...config } as ZDocConfig;
 }
 
-async function loadBlock(
-  docsDir: string,
-  page: string,
-  block: string,
-  language: string,
-): Promise<string> {
-  const result = await loadFile(docsDir, page, `${block}.${language}.md`, '');
-  return result.content;
-}
-
 // ── Input transpilation ─────────────────────────────────────
 
 export function transpileInput(name: string, input: ZDocInput): InputType {
@@ -108,7 +161,9 @@ export function transpileInput(name: string, input: ZDocInput): InputType {
     const items: [string, MenuValue][] = [];
     const defaultVal = input.default;
 
-    if (defaultVal && input.option[defaultVal]) {
+    // The default is honoured when it names an option, even if that option
+    // carries no entry (its key is then the label).
+    if (defaultVal != null && Object.prototype.hasOwnProperty.call(input.option, defaultVal)) {
       const opt = input.option[defaultVal];
       const title = opt?._ || defaultVal;
       const values: MenuValue = { [name]: defaultVal };
@@ -150,20 +205,6 @@ export function transpileInput(name: string, input: ZDocInput): InputType {
   };
 }
 
-export function createInitialState(menus: InputType[]): MenuValue {
-  return menus.reduce<MenuValue>((acc, menu) => {
-    let value: MenuValue;
-    if ('items' in menu) {
-      value = menu.items[0]?.[1] || {};
-    } else if ('trueValue' in menu) {
-      value = { [menu.name]: menu.defaultValue ? menu.trueValue : menu.falseValue };
-    } else {
-      value = { [menu.name]: menu.defaultValue || '' };
-    }
-    return { ...acc, ...value };
-  }, {});
-}
-
 // ── Markdown parsing (markdown-it based) ────────────────────
 
 /**
@@ -174,28 +215,29 @@ function parseContentBlock(
   content: string,
   blockPath: string | null,
   inputDefs: Record<string, ZDocInput>,
-  _globalBlockCounter: { value: number },
+  counters: ParserCounters,
   pageId: string,
 ): {
   html: string;
   codeBlocks: ExtractedCodeBlock[];
+  globalForms: GlobalForm[];
+  inlineTemplates: ExtractedInlineTemplate[];
   headings: ToC[];
 } {
-  const { md, result } = createZdocParser(
-    inputDefs,
-    pageId,
-    blockPath,
-    _globalBlockCounter.value,
-  );
+  const { md, result } = createZdocParser(inputDefs, pageId, blockPath, counters);
 
   const html = md.render(content);
 
-  // Advance the global counter to stay in sync.
-  _globalBlockCounter.value += result.codeBlocks.length;
+  // Advance the page-global counters to keep ids stable across blocks.
+  counters.codeBlocks += result.codeBlocks.length;
+  counters.globalForms += result.globalForms.length;
+  counters.inlineTemplates += result.inlineTemplates.length;
 
   return {
     html,
     codeBlocks: result.codeBlocks,
+    globalForms: result.globalForms,
+    inlineTemplates: result.inlineTemplates,
     headings: result.toc,
   };
 }
@@ -218,23 +260,33 @@ export async function getContentBySegments(
   const blockNames = conf.block || ['index'];
   const blocks: string[] = [];
   const allCodeBlocks: ExtractedCodeBlock[] = [];
+  const allGlobalForms: GlobalForm[] = [];
+  const allInlineTemplates: ExtractedInlineTemplate[] = [];
   const allHeadings: ToC[] = [];
-  const globalBlockCounter = { value: 0 };
+  const counters = { codeBlocks: 0, globalForms: 0, inlineTemplates: 0 };
 
   for (const blockName of blockNames) {
-    const content = await loadBlock(docsDir, id, blockName, language);
+    // The resolved source path (Site Override wins) travels as the block's
+    // identity in located errors.
+    const { path: blockPath, content } = await loadFile(
+      docsDir,
+      id,
+      `${blockName}.${language}.md`,
+      '',
+    );
     if (!content) continue;
 
-    const blockPath = path.join(docsDir, id, `${blockName}.${language}.md`);
-    const { html, codeBlocks, headings } = parseContentBlock(
+    const { html, codeBlocks, globalForms, inlineTemplates, headings } = parseContentBlock(
       content,
       blockPath,
       conf.input,
-      globalBlockCounter,
+      counters,
       id,
     );
     blocks.push(html);
     allCodeBlocks.push(...codeBlocks);
+    allGlobalForms.push(...globalForms);
+    allInlineTemplates.push(...inlineTemplates);
     allHeadings.push(...headings);
   }
 
@@ -242,6 +294,9 @@ export async function getContentBySegments(
   const compiledTemplates: Record<string, string> = {};
   for (const block of allCodeBlocks) {
     compiledTemplates[block.id] = block.template;
+  }
+  for (const inline of allInlineTemplates) {
+    compiledTemplates[inline.id] = inline.template;
   }
 
   const contentHtml = blocks.join('\n\n');
@@ -252,6 +307,8 @@ export async function getContentBySegments(
     meta: {
       title: conf._,
       cname: id,
+      // Spec "Protocol enforcement": the config filter reaches the page meta.
+      filter: conf.filter ?? undefined,
     },
     compiledTemplates,
     codeBlocks: allCodeBlocks.map(({ id, menus, lang, filepath, append }) => ({
@@ -261,18 +318,35 @@ export async function getContentBySegments(
       filepath,
       append,
     })),
+    globalForms: allGlobalForms,
+    inlineTemplates: allInlineTemplates.map(
+      ({ id, lang }): InlineTemplate => ({ id, lang }),
+    ),
   };
 }
+
+/**
+ * Docs subtrees holding pages: Base Docs (submodule) and Site Overrides
+ * (CONTEXT.md "Help doc storage"). Keys are glossary names; values are the
+ * on-disk directory names, which keep their historical `global`/`local`
+ * spelling — `global/` is the Base Docs tree and is unrelated to Global
+ * Inputs.
+ */
+const PAGE_TREES = { base: 'global', local: 'local' } as const;
 
 export async function getAvailableSegments(
   docsDir: string,
 ): Promise<string[][]> {
-  try {
-    const entries = await fs.readdir(docsDir, { withFileTypes: true });
-    return entries
-      .filter((e) => e.isDirectory() && !e.name.startsWith('.') && e.name !== 'site' && e.name !== 'local' && e.name !== 'global')
-      .map((e) => [e.name]);
-  } catch {
-    return [];
+  const pages = new Set<string>();
+  for (const tree of Object.values(PAGE_TREES)) {
+    try {
+      const entries = await fs.readdir(path.join(docsDir, tree), { withFileTypes: true });
+      for (const e of entries) {
+        if (e.isDirectory() && !e.name.startsWith('.')) pages.add(e.name);
+      }
+    } catch {
+      // A missing tree simply contributes no pages.
+    }
   }
+  return [...pages].sort().map((name) => [name]);
 }

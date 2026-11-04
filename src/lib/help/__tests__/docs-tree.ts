@@ -10,6 +10,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { expect } from 'vitest';
 
 /** Path of a Base Docs file inside a fixture tree. */
 export function baseFile(page: string, file: string): string {
@@ -46,6 +47,24 @@ export async function errorMessageFrom(promise: Promise<unknown>): Promise<strin
     return (err as Error).message;
   }
   throw new Error('expected the pipeline to reject');
+}
+
+/**
+ * Assert a located-error message carries page, block and line in the
+ * format's one convention (spec story 24): the message ends with
+ * `on page <page>, block <source file> at line <line>`.
+ */
+export function expectLocatedError(
+  message: string,
+  page: string,
+  block: string,
+  line: number | string,
+): void {
+  const suffix = `on page ${page}, block ${block} at line ${line}`;
+  expect(
+    message.endsWith(suffix),
+    `expected the located error to end with "${suffix}", got: "${message}"`,
+  ).toBe(true);
 }
 
 /** Remove every fixture tree created by makeDocsTree (call from afterAll). */

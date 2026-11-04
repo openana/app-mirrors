@@ -272,8 +272,11 @@ export function createZdocParser(
       // Build menus from input attribute
       const menusOrError = transpileInputToMenuValue(attrs.input, inputDefs);
       if (typeof menusOrError === 'string') {
-        throw new Error(
-          `Input "${menusOrError}" used in directive on page ${pageId}, block ${blockPath ?? '(inline)'} is not defined in [lang].yaml at line ${line}`,
+        throw locatedError(
+          pageId,
+          blockPath,
+          line,
+          `Input "${menusOrError}" used in directive is not defined in [lang].yaml`,
         );
       }
 

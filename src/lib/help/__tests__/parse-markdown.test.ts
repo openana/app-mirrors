@@ -1,25 +1,24 @@
 /**
  * Characterization tests for the help pipeline's page-data builder (spec
- * "Testing Decisions", seam 1). They lock today's behaviour — including known
- * gaps that later tickets (04–08) deliberately change — so refactors stay
- * verifiable. Assertions are on the returned page data only (content HTML,
- * code blocks, headings, meta), never on markdown-it token internals.
+ * "Testing Decisions", seam 1). They lock the pipeline's current behaviour
+ * so refactors stay verifiable. Assertions are on the returned page data
+ * only (content HTML, code blocks, headings, meta), never on markdown-it
+ * token internals.
  */
 
+import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { getContentBySegments, getAvailableSegments } from '../parse-markdown';
-import { baseFile, localFile, makeDocsTree, removeDocsTrees } from './docs-tree';
+import {
+  baseFile,
+  errorMessageFrom,
+  expectLocatedError,
+  localFile,
+  makeDocsTree,
+  removeDocsTrees,
+} from './docs-tree';
 
 afterAll(removeDocsTrees);
-
-async function errorMessageFrom(promise: Promise<unknown>): Promise<string> {
-  try {
-    await promise;
-  } catch (err) {
-    return (err as Error).message;
-  }
-  throw new Error('expected the pipeline to reject');
-}
 
 describe('help pipeline page-data builder', () => {
   describe('page data', () => {
@@ -482,9 +481,7 @@ describe('help pipeline page-data builder', () => {
       const message = await errorMessageFrom(getContentBySegments(root, ['demo'], 'zh'));
 
       expect(message).toContain('Unsupported directive "foo"');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
     it('reports page, block and line for an input used in a directive but not defined', async () => {
@@ -498,9 +495,7 @@ describe('help pipeline page-data builder', () => {
       expect(message).toContain('Input "ghost" used in directive');
       // The message carries a literal "[lang].yaml" placeholder today.
       expect(message).toContain('is not defined in [lang].yaml');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 3');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 3);
     });
 
     it('reports page, block and line for an invalid heading slug', async () => {
@@ -513,9 +508,7 @@ describe('help pipeline page-data builder', () => {
 
       expect(message).toContain('Expected header ID to be a valid slug');
       expect(message).toContain('{#Not Valid}');
-      expect(message).toContain('on page demo');
-      expect(message).toContain('index.zh.md');
-      expect(message).toContain('at line 1');
+      expectLocatedError(message, 'demo', path.join(root, 'global', 'demo', 'index.zh.md'), 1);
     });
   });
 

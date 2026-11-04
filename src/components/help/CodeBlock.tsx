@@ -19,7 +19,7 @@ interface CodeBlockProps {
   filepath?: string;
   /** Mirror Host (domain name), e.g. "mirrors.xjtu.edu.cn" (glossary: Host) */
   host?: string;
-  /** Page slug, e.g. "debian" — appended to the host in the Mirror Endpoint URL */
+  /** Page slug, e.g. "debian" — the mirror's project directory `{{path}}` (`/<cname>`) */
   cname?: string;
   sudoEnabled?: boolean;
   httpsEnabled?: boolean;

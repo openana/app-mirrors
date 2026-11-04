@@ -539,8 +539,11 @@ describe('help pipeline page-data builder', () => {
     });
   });
 
-  describe('known gaps (characterization; fixed in later tickets)', () => {
-    it('silently skips missing block files (current lenience)', async () => {
+  // Deliberate characterization of current behaviour, not a known gap:
+  // silently skipping missing block files is accepted lenience with no
+  // fixing ticket (relabeled in review; the old label promised one).
+  describe('characterization of current behaviour', () => {
+    it('silently skips missing block files', async () => {
       const root = await makeDocsTree({
         [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\nblock:\n- index\n- missing\n',
         [baseFile('demo', 'index.zh.md')]: '只有索引。',

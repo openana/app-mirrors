@@ -1,8 +1,8 @@
 /**
- * Characterization tests for the pure Template render seam (spec "Testing
- * Decisions", seam 2): "render a Template given a selection store". They lock
- * today's variable resolution — built-ins, sudo, select/switch/text inputs and
- * option-derived values — including known gaps fixed in later tickets.
+ * Tests for the pure Template render seam (spec "Testing Decisions", seam
+ * 2): "render a Template given a selection store". They lock the variable
+ * resolution — built-ins, sudo, select/switch/text inputs and
+ * option-derived values.
  */
 
 import { describe, expect, it } from 'vitest';

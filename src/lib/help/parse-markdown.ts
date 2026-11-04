@@ -24,6 +24,7 @@ import {
   createZdocParser,
   type ExtractedCodeBlock,
   type ExtractedInlineTemplate,
+  type ParserCounters,
 } from './markdown-it-plugins';
 import { locatedError } from './errors';
 
@@ -223,7 +224,7 @@ function parseContentBlock(
   content: string,
   blockPath: string | null,
   inputDefs: Record<string, ZDocInput>,
-  counters: { codeBlocks: number; globalForms: number; inlineTemplates: number },
+  counters: ParserCounters,
   pageId: string,
 ): {
   html: string;
@@ -232,14 +233,7 @@ function parseContentBlock(
   inlineTemplates: ExtractedInlineTemplate[];
   headings: ToC[];
 } {
-  const { md, result } = createZdocParser(
-    inputDefs,
-    pageId,
-    blockPath,
-    counters.codeBlocks,
-    counters.globalForms,
-    counters.inlineTemplates,
-  );
+  const { md, result } = createZdocParser(inputDefs, pageId, blockPath, counters);
 
   const html = md.render(content);
 

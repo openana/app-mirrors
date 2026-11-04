@@ -30,6 +30,16 @@ export interface ExtractedInlineTemplate {
   lang?: string;
 }
 
+/**
+ * Page-global id counters, shared across a page's Content Blocks so ids
+ * stay stable regardless of block boundaries.
+ */
+export interface ParserCounters {
+  codeBlocks: number;
+  globalForms: number;
+  inlineTemplates: number;
+}
+
 // ── Attribute parsing ───────────────────────────────────────
 
 interface ZtmplAttrs {
@@ -202,17 +212,15 @@ export function createZdocParser(
   inputDefs: Record<string, ZDocInput>,
   pageId: string,
   blockPath: string | null,
-  startCounter: number = 0,
-  startGlobalCounter: number = 0,
-  startInlineCounter: number = 0,
+  counters: ParserCounters,
 ): { md: InstanceType<typeof MarkdownIt>; result: MarkdownItPluginResult } {
   const toc: ToC[] = [];
   const codeBlocks: ExtractedCodeBlock[] = [];
   const globalForms: GlobalForm[] = [];
   const inlineTemplates: ExtractedInlineTemplate[] = [];
-  let counter = startCounter;
-  let globalCounter = startGlobalCounter;
-  let inlineCounter = startInlineCounter;
+  let codeBlockCounter = counters.codeBlocks;
+  let globalFormCounter = counters.globalForms;
+  let inlineTemplateCounter = counters.inlineTemplates;
 
   const md = new MarkdownIt({ html: true }).enable('table');
 
@@ -273,11 +281,11 @@ export function createZdocParser(
         // A global="true" Template renders its form at this position; its
         // body is ignored (format spec). Global without input is rejected
         // above.
-        const formId = `globalmenu-${globalCounter++}`;
+        const formId = `globalmenu-${globalFormCounter++}`;
         globalForms.push({ id: formId, menus: menusOrError });
         placeholder = `<globalmenu id="${formId}" />`;
       } else {
-        const blockId = `codeblock-${counter++}`;
+        const blockId = `codeblock-${codeBlockCounter++}`;
         codeBlocks.push({
           id: blockId,
           template: token.content.trimEnd(),
@@ -327,7 +335,7 @@ export function createZdocParser(
           const line = token.map ? token.map[0] + 1 : '?';
           throw locatedError(pageId, blockPath, line, `Unsupported attribute "${unsupported}"`);
         }
-        const id = `codeinline-${inlineCounter++}`;
+        const id = `codeinline-${inlineTemplateCounter++}`;
         inlineTemplates.push({ id, template: code.content, lang: attrs.lang });
 
         text.content = text.content.slice(0, -m[0].length);

@@ -17,9 +17,14 @@ import type {
   InputType,
   HelpPageData,
   GlobalForm,
+  InlineTemplate,
   ToC,
 } from './types';
-import { createZdocParser, type ExtractedCodeBlock } from './markdown-it-plugins';
+import {
+  createZdocParser,
+  type ExtractedCodeBlock,
+  type ExtractedInlineTemplate,
+} from './markdown-it-plugins';
 
 function isErrnoException(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && 'code' in error;
@@ -160,12 +165,13 @@ function parseContentBlock(
   content: string,
   blockPath: string | null,
   inputDefs: Record<string, ZDocInput>,
-  counters: { codeBlocks: number; globalForms: number },
+  counters: { codeBlocks: number; globalForms: number; inlineTemplates: number },
   pageId: string,
 ): {
   html: string;
   codeBlocks: ExtractedCodeBlock[];
   globalForms: GlobalForm[];
+  inlineTemplates: ExtractedInlineTemplate[];
   headings: ToC[];
 } {
   const { md, result } = createZdocParser(
@@ -174,6 +180,7 @@ function parseContentBlock(
     blockPath,
     counters.codeBlocks,
     counters.globalForms,
+    counters.inlineTemplates,
   );
 
   const html = md.render(content);
@@ -181,11 +188,13 @@ function parseContentBlock(
   // Advance the page-global counters to keep ids stable across blocks.
   counters.codeBlocks += result.codeBlocks.length;
   counters.globalForms += result.globalForms.length;
+  counters.inlineTemplates += result.inlineTemplates.length;
 
   return {
     html,
     codeBlocks: result.codeBlocks,
     globalForms: result.globalForms,
+    inlineTemplates: result.inlineTemplates,
     headings: result.toc,
   };
 }
@@ -209,14 +218,15 @@ export async function getContentBySegments(
   const blocks: string[] = [];
   const allCodeBlocks: ExtractedCodeBlock[] = [];
   const allGlobalForms: GlobalForm[] = [];
+  const allInlineTemplates: ExtractedInlineTemplate[] = [];
   const allHeadings: ToC[] = [];
-  const counters = { codeBlocks: 0, globalForms: 0 };
+  const counters = { codeBlocks: 0, globalForms: 0, inlineTemplates: 0 };
 
   for (const blockName of blockNames) {
     const { path: blockPath, content } = await loadBlock(docsDir, id, blockName, language);
     if (!content) continue;
 
-    const { html, codeBlocks, globalForms, headings } = parseContentBlock(
+    const { html, codeBlocks, globalForms, inlineTemplates, headings } = parseContentBlock(
       content,
       blockPath,
       conf.input,
@@ -226,6 +236,7 @@ export async function getContentBySegments(
     blocks.push(html);
     allCodeBlocks.push(...codeBlocks);
     allGlobalForms.push(...globalForms);
+    allInlineTemplates.push(...inlineTemplates);
     allHeadings.push(...headings);
   }
 
@@ -233,6 +244,9 @@ export async function getContentBySegments(
   const compiledTemplates: Record<string, string> = {};
   for (const block of allCodeBlocks) {
     compiledTemplates[block.id] = block.template;
+  }
+  for (const inline of allInlineTemplates) {
+    compiledTemplates[inline.id] = inline.template;
   }
 
   const contentHtml = blocks.join('\n\n');
@@ -253,6 +267,9 @@ export async function getContentBySegments(
       append,
     })),
     globalForms: allGlobalForms,
+    inlineTemplates: allInlineTemplates.map(
+      ({ id, lang }): InlineTemplate => ({ id, lang }),
+    ),
   };
 }
 

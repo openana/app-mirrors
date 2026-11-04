@@ -9,6 +9,12 @@ export interface GlobalForm {
   menus: InputType[];
 }
 
+/** An inline Template (a `{ztmpl …}` marker followed by a code span), placed via `<codeinline id>` in content. */
+export interface InlineTemplate {
+  id: string;
+  lang?: string;
+}
+
 export interface HelpPageData {
   toc: ToC[];
   content: string;
@@ -26,6 +32,8 @@ export interface HelpPageData {
   }>;
   /** Global Input forms (ADR 0007), placed via `<globalmenu id>` in content. */
   globalForms: GlobalForm[];
+  /** Inline Templates (spec "Inline Templates"), placed via `<codeinline id>` in content. */
+  inlineTemplates: InlineTemplate[];
 }
 
 export interface ZDocConfigOnDisk {

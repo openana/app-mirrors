@@ -518,18 +518,6 @@ describe('help pipeline page-data builder', () => {
   });
 
   describe('known gaps (characterization; fixed in later tickets)', () => {
-    it('keeps inline {ztmpl} markers and their code spans literal (ticket 06)', async () => {
-      const root = await makeDocsTree({
-        [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\n',
-        [baseFile('demo', 'index.zh.md')]: '地址为 {ztmpl}`{{endpoint}}/x`。',
-      });
-
-      const data = await getContentBySegments(root, ['demo'], 'zh');
-
-      expect(data!.content).toContain('{ztmpl}');
-      expect(data!.content).toContain('<code>{{endpoint}}/x</code>');
-    });
-
     it('silently skips missing block files (current lenience)', async () => {
       const root = await makeDocsTree({
         [baseFile('demo', 'zh.yaml')]: '_: Demo 页面\nblock:\n- index\n- missing\n',

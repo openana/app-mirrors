@@ -2,6 +2,7 @@
  * Custom markdown-it plugins for zdoc processing.
  *
  * - ztmpl fence rule: extracts ```{ztmpl ...} fences into code blocks
+ * - ztmpl inline rule: extracts `{ztmpl …}` marker + code span into inline Templates
  * - heading-id rule: handles {#custom-id} on headings, generates slugs
  */
 
@@ -20,6 +21,12 @@ export interface ExtractedCodeBlock {
   lang?: string;
   filepath?: string;
   append?: boolean;
+}
+
+export interface ExtractedInlineTemplate {
+  id: string;
+  template: string;
+  lang?: string;
 }
 
 // ── Attribute parsing ───────────────────────────────────────
@@ -70,6 +77,15 @@ export function transpileInputToMenuValue(
   }
   return inputNames.map((name) => transpileInput(name, inputDefs[name]!));
 }
+
+// ── Inline template detection ───────────────────────────────
+
+/**
+ * A `{ztmpl …}` marker at the very end of a text run that is immediately
+ * followed by a code span is an inline Template (spec "Inline Templates").
+ * Any other braces in text (`awk '{print $1}'`, `${var}`) are literal.
+ */
+const INLINE_MARKER_RE = /\{ztmpl([^{}]*)\}$/;
 
 // ── heading-id rule ─────────────────────────────────────────
 
@@ -154,6 +170,7 @@ export interface MarkdownItPluginResult {
   toc: ToC[];
   codeBlocks: ExtractedCodeBlock[];
   globalForms: GlobalForm[];
+  inlineTemplates: ExtractedInlineTemplate[];
 }
 
 /**
@@ -166,12 +183,15 @@ export function createZdocParser(
   blockPath: string | null,
   startCounter: number = 0,
   startGlobalCounter: number = 0,
+  startInlineCounter: number = 0,
 ): { md: InstanceType<typeof MarkdownIt>; result: MarkdownItPluginResult } {
   const toc: ToC[] = [];
   const codeBlocks: ExtractedCodeBlock[] = [];
   const globalForms: GlobalForm[] = [];
+  const inlineTemplates: ExtractedInlineTemplate[] = [];
   let counter = startCounter;
   let globalCounter = startGlobalCounter;
+  let inlineCounter = startInlineCounter;
 
   const md = new MarkdownIt({ html: true }).enable('table');
 
@@ -246,5 +266,43 @@ export function createZdocParser(
     return true;
   });
 
-  return { md, result: { toc, codeBlocks, globalForms } };
+  // Register ztmpl inline rule (populates inlineTemplates[])
+  md.core.ruler.push('ztmpl-inline', (state: StateCore) => {
+    const { tokens } = state;
+
+    for (const token of tokens) {
+      if (token.type !== 'inline' || !token.children) continue;
+      const children = token.children;
+
+      for (let i = 0; i < children.length - 1; i++) {
+        const text = children[i]!;
+        const code = children[i + 1]!;
+        if (text.type !== 'text' || code.type !== 'code_inline') continue;
+
+        // A `{ztmpl …}` marker immediately followed by a code span is an
+        // inline Template; attributes go through the same parser as fences
+        // (only `lang` is honoured here — strictness lands in ticket 07).
+        const m = INLINE_MARKER_RE.exec(text.content);
+        if (!m) continue;
+
+        const attrs = parseZtmplAttrs(m[1]!);
+        const id = `codeinline-${inlineCounter++}`;
+        inlineTemplates.push({ id, template: code.content, lang: attrs.lang });
+
+        text.content = text.content.slice(0, -m[0].length);
+        // Mutate the code span into an inline HTML placeholder.
+        code.type = 'html_inline';
+        code.tag = '';
+        code.nesting = 0;
+        code.markup = '';
+        code.info = '';
+        code.content = `<codeinline id="${id}"></codeinline>`;
+        code.children = null;
+      }
+    }
+
+    return true;
+  });
+
+  return { md, result: { toc, codeBlocks, globalForms, inlineTemplates } };
 }
